@@ -1,19 +1,32 @@
 import * as z from "zod";
 
+// bcrypt only uses the first 72 BYTES of the input, so anything longer is silently ignored.
+// Reject it instead, so two different long passwords can never hash to the same value.
+const MAX_PASSWORD_BYTES = 72;
+
+const NewPassword = z
+  .string()
+  .min(8, { message: "Minimum 8 characters" })
+  .refine((value) => new TextEncoder().encode(value).length <= MAX_PASSWORD_BYTES, {
+    message: "Password is too long (max 72 bytes)",
+  });
+
 export const LoginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email" }),
-  password: z.string().min(1, { message: "Password required" }),
+  // Not subject to the new-password policy: accounts created under the old rules (min 6)
+  // must still be able to sign in. Just bound the size.
+  password: z.string().min(1, { message: "Password required" }).max(256),
 });
 
 export const RegisterSchema = z.object({
   name: z.string().min(1, { message: "Name is required" }),
   email: z.string().email({ message: "Please enter a valid email" }),
-  password: z.string().min(6, { message: "Minimum 6 characters" }),
+  password: NewPassword,
   inviteToken: z.string().optional(),
 });
 
 export const NewPasswordSchema = z.object({
-  password: z.string().min(6, { message: "Minimum 6 characters" }),
+  password: NewPassword,
 });
 
 export const ResetSchema = z.object({

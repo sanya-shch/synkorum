@@ -43,4 +43,22 @@ describe("POST /api/auth/reset-password", () => {
     });
     expect(prismaMock.passwordResetToken.delete).toHaveBeenCalledWith({ where: { id: "r1" } });
   });
+
+  it("rate limits repeated attempts from one IP", async () => {
+    prismaMock.passwordResetToken.findUnique.mockResolvedValue(null);
+    const send = () =>
+      POST(
+        new Request("http://localhost/api/auth/reset-password", {
+          method: "POST",
+          headers: { "x-forwarded-for": "10.9.9.9", "content-type": "application/json" },
+          body: JSON.stringify({ token: "guess", password: "longenough1" }),
+        }),
+      );
+
+    const statuses: number[] = [];
+    for (let i = 0; i < 11; i++) statuses.push((await send()).status);
+
+    expect(statuses.slice(0, 10).every((s) => s === 400)).toBe(true);
+    expect(statuses[10]).toBe(429);
+  });
 });

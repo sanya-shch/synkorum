@@ -53,7 +53,7 @@ describe("deleteBoard / updateBoardTitle - board-level authorization", () => {
 
     const result = await deleteBoard("missing");
 
-    expect(result).toEqual({ error: "The board was created" });
+    expect(result).toEqual({ error: "Board not found" });
     expect(prismaMock.membership.findUnique).not.toHaveBeenCalled();
   });
 

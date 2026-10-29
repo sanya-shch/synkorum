@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { escapeHtml } from "@/lib/layer-text";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -47,6 +48,6 @@ export const sendOrgInviteEmail = async (params: {
   await send(
     params.email,
     `Invitation to the team "${params.organizationName}"`,
-    `<p>You have been invited to the team "${params.organizationName}". <a href="${link}">Join</a></p>`,
+    `<p>You have been invited to the team "${escapeHtml(params.organizationName)}". <a href="${link}">Join</a></p>`,
   );
 };

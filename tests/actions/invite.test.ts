@@ -216,3 +216,24 @@ describe("revokeBoardShareLink", () => {
     expect(prismaMock.boardShareLink.updateMany).not.toHaveBeenCalled();
   });
 });
+
+describe("inviteMemberByEmail - rate limit", () => {
+  it("stops sending invitation emails after 20 per hour per organization", async () => {
+    prismaMock.membership.findUnique.mockResolvedValue(adminMembership);
+    prismaMock.organization.findUnique.mockResolvedValue({ id: ORG_ID, name: "Team" } as any);
+    prismaMock.user.findUnique.mockResolvedValue(null);
+    prismaMock.invite.deleteMany.mockResolvedValue({ count: 0 });
+    prismaMock.invite.create.mockResolvedValue({ token: "t" } as any);
+
+    let last: unknown;
+    for (let i = 0; i < 21; i++) {
+      last = await inviteMemberByEmail({
+        organizationId: ORG_ID,
+        email: `user${i}@a.com`,
+        role: "MEMBER",
+      });
+    }
+
+    expect(last).toEqual({ error: "Too many invitations. Please try again later." });
+  });
+});

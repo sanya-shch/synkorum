@@ -2,9 +2,13 @@ import { describe, it, expect, vi } from "vitest";
 import { prismaMock } from "../mocks/db";
 import { sendVerificationEmailMock } from "../mocks/mail";
 
-vi.mock("@/lib/password", () => ({ verifyPassword: vi.fn(), hashPassword: vi.fn() }));
+vi.mock("@/lib/password", () => ({
+  verifyPassword: vi.fn(),
+  hashPassword: vi.fn(),
+  burnPasswordCheck: vi.fn(),
+}));
 
-import { verifyPassword } from "@/lib/password";
+import { burnPasswordCheck, verifyPassword } from "@/lib/password";
 import { POST } from "@/app/api/auth/login/route";
 
 let n = 0;
@@ -110,5 +114,25 @@ describe("POST /api/auth/login", () => {
     for (let i = 0; i < 6; i++) await login(valid, "203.0.113.50");
 
     expect((await login(valid, "203.0.113.51")).status).toBe(401);
+  });
+});
+
+describe("POST /api/auth/login - per-account limit", () => {
+  it("locks an account out after 10 attempts even when the IP changes", async () => {
+    prismaMock.user.findUnique.mockResolvedValue(null);
+    const statuses: number[] = [];
+    for (let i = 0; i < 11; i++) {
+      statuses.push((await login({ email: "victim@a.com", password: "guess" + i })).status);
+    }
+    expect(statuses.slice(0, 10).every((s) => s === 401)).toBe(true);
+    expect(statuses[10]).toBe(429);
+  });
+
+  it("still spends password-hashing time when the email is unknown", async () => {
+    prismaMock.user.findUnique.mockResolvedValue(null);
+
+    await login({ email: "ghost@a.com", password: "whatever1" });
+
+    expect(burnPasswordCheck).toHaveBeenCalledWith("whatever1");
   });
 });

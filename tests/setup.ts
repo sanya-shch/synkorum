@@ -1,6 +1,7 @@
 import { vi, beforeEach } from "vitest";
 import { mockReset } from "vitest-mock-extended";
 import { prismaMock } from "./mocks/db";
+import { resetRateLimits } from "@/lib/rate-limit";
 import { currentUserMock } from "./mocks/current-user";
 import {
   sendVerificationEmailMock,
@@ -27,6 +28,7 @@ vi.mock("@/lib/mail", () => ({
 }));
 
 beforeEach(() => {
+  resetRateLimits();
   mockReset(prismaMock);
   currentUserMock.mockReset();
   sendVerificationEmailMock.mockReset().mockResolvedValue(undefined);

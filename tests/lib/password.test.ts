@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { hashPassword, verifyPassword } from "@/lib/password";
+import { burnPasswordCheck, hashPassword, verifyPassword } from "@/lib/password";
 
 describe("password hashing", () => {
   it("verifies a correct password against its hash", async () => {
@@ -21,5 +21,11 @@ describe("password hashing", () => {
     ]);
 
     expect(a).not.toBe(b);
+  });
+});
+
+describe("burnPasswordCheck", () => {
+  it("resolves without a user and does not throw", async () => {
+    await expect(burnPasswordCheck("anything")).resolves.toBeUndefined();
   });
 });

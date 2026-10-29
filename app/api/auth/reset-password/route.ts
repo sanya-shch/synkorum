@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { NewPasswordSchema } from "@/schemas";
 import { hashPassword } from "@/lib/password";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import * as z from "zod";
 
 const RequestSchema = NewPasswordSchema.extend({
@@ -9,6 +10,17 @@ const RequestSchema = NewPasswordSchema.extend({
 });
 
 export async function POST(request: Request) {
+  const { allowed, retryAfterSeconds } = checkRateLimit(`reset-password:${getClientIp(request)}`, {
+    limit: 10,
+    windowMs: 60_000,
+  });
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many attempts. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
+    );
+  }
+
   const body = await request.json();
   const validated = RequestSchema.safeParse(body);
 

@@ -49,8 +49,19 @@ describe("checkRateLimit", () => {
 describe("getClientIp", () => {
   const req = (headers: Record<string, string>) => new Request("http://x", { headers });
 
-  it("uses the first x-forwarded-for entry", () => {
-    expect(getClientIp(req({ "x-forwarded-for": "1.1.1.1, 2.2.2.2" }))).toBe("1.1.1.1");
+  it("uses the entry added by the trusted proxy, not the client-supplied first one", () => {
+    // 6.6.6.6 is spoofed by the client; 2.2.2.2 is what our (single) proxy saw.
+    expect(getClientIp(req({ "x-forwarded-for": "6.6.6.6, 2.2.2.2" }))).toBe("2.2.2.2");
+    expect(getClientIp(req({ "x-forwarded-for": "1.1.1.1" }))).toBe("1.1.1.1");
+  });
+
+  it("skips additional trusted proxies when TRUSTED_PROXY_COUNT is set", () => {
+    vi.stubEnv("TRUSTED_PROXY_COUNT", "2");
+    try {
+      expect(getClientIp(req({ "x-forwarded-for": "6.6.6.6, 1.1.1.1, 2.2.2.2" }))).toBe("1.1.1.1");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("falls back to x-real-ip", () => {

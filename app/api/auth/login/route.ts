@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { LoginSchema } from "@/schemas";
-import { verifyPassword } from "@/lib/password";
+import { burnPasswordCheck, verifyPassword } from "@/lib/password";
 import { buildSessionCookie } from "@/lib/session";
 import { generateVerificationToken } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/mail";
@@ -28,8 +28,21 @@ export async function POST(request: Request) {
 
   const { email, password } = validated.data;
 
+  // Per-account limit on top of the per-IP one, so a botnet can't brute-force a single account.
+  const accountLimit = checkRateLimit(`login-email:${email.toLowerCase()}`, {
+    limit: 10,
+    windowMs: 15 * 60_000,
+  });
+  if (!accountLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many attempts. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(accountLimit.retryAfterSeconds) } },
+    );
+  }
+
   const user = await db.user.findUnique({ where: { email } });
   if (!user) {
+    await burnPasswordCheck(password);
     return NextResponse.json({ error: "Incorrect email or password" }, { status: 401 });
   }
 

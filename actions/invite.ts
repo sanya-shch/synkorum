@@ -8,6 +8,7 @@ import { toActionResult } from "@/lib/action-result";
 import { InviteMemberSchema, CreateBoardShareLinkSchema } from "@/schemas";
 import { generateOrgInviteToken, generateBoardShareToken } from "@/lib/tokens";
 import { sendOrgInviteEmail } from "@/lib/mail";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const inviteMemberByEmail = async (values: z.infer<typeof InviteMemberSchema>) =>
   toActionResult(async () => {
@@ -16,6 +17,14 @@ export const inviteMemberByEmail = async (values: z.infer<typeof InviteMemberSch
 
     const { organizationId, email, role } = validated.data;
     await requireOrgAdmin(organizationId);
+
+    // Each invitation sends an email from our domain - don't let one account turn that
+    // into a spam cannon.
+    const { allowed } = checkRateLimit(`invite:${organizationId}`, {
+      limit: 20,
+      windowMs: 60 * 60_000,
+    });
+    if (!allowed) return { error: "Too many invitations. Please try again later." };
 
     const organization = await db.organization.findUnique({ where: { id: organizationId } });
     if (!organization) return { error: "Team not found" };

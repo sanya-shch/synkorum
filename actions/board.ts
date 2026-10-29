@@ -96,11 +96,11 @@ export const updateBoardTitle = async (boardId: string, title: string) =>
 export const deleteBoard = async (boardId: string) =>
   toActionResult(async () => {
     const board = await db.board.findUnique({ where: { id: boardId } });
-    if (!board) return { error: "The board was created" };
+    if (!board) return { error: "Board not found" };
 
     await requireOrgMember(board.organizationId);
 
     await db.board.delete({ where: { id: boardId } });
 
-    return { success: "The board was created" };
+    return { success: "The board was deleted" };
   });

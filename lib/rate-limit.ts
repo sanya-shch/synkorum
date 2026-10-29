@@ -40,8 +40,29 @@ export function checkRateLimit(
   return { allowed: true, retryAfterSeconds: 0 };
 }
 
+// Number of trusted reverse proxies in front of the app (each one appends to
+// X-Forwarded-For). Vercel and most single-proxy setups: 1. Set TRUSTED_PROXY_COUNT if
+// there are more (e.g. CDN + load balancer = 2).
+function trustedProxyCount() {
+  const parsed = Number.parseInt(process.env.TRUSTED_PROXY_COUNT ?? "1", 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+}
+
+// X-Forwarded-For is "client, proxy1, proxy2". The client can put anything it likes at the
+// START of the list, but entries appended by our own proxies are trustworthy - so count
+// from the END, skipping the trusted proxies, instead of taking the first value.
 export function getClientIp(request: Request): string {
   const forwardedFor = request.headers.get("x-forwarded-for");
-  if (forwardedFor) return forwardedFor.split(",")[0].trim();
+  if (forwardedFor) {
+    const parts = forwardedFor
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (parts.length > 0) return parts[Math.max(0, parts.length - trustedProxyCount())];
+  }
   return request.headers.get("x-real-ip") ?? "unknown";
+}
+
+export function resetRateLimits() {
+  buckets.clear();
 }
