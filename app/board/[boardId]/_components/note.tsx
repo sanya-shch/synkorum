@@ -2,6 +2,7 @@ import { Kalam } from "next/font/google";
 import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
 
 import { NoteLayer } from "@/types/canvas";
+import { toEditableHtml, toPlainText } from "@/lib/layer-text";
 import { cn, colorToCss, getContrastingTextColor } from "@/lib/utils";
 import { useMutation } from "@liveblocks/react";
 import { LiveObject } from "@liveblocks/client";
@@ -40,7 +41,7 @@ export const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) =>
   }, []);
 
   const handleContentChange = (e: ContentEditableEvent) => {
-    updateValue(e.target.value);
+    updateValue(toPlainText(e.target.value));
   };
 
   return (
@@ -57,7 +58,7 @@ export const Note = ({ layer, onPointerDown, id, selectionColor }: NoteProps) =>
       className="shadow-md drop-shadow-xl"
     >
       <ContentEditable
-        html={value || "Text"}
+        html={toEditableHtml(value || "Text")}
         onChange={handleContentChange}
         className={cn(
           "h-full w-full flex items-center justify-center text-center outline-none",

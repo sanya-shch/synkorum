@@ -1,7 +1,13 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { prismaMock } from "../mocks/db";
 import { currentUserMock } from "../mocks/current-user";
-import { inviteMemberByEmail, acceptOrgInvite, createBoardShareLink } from "@/actions/invite";
+import {
+  inviteMemberByEmail,
+  acceptOrgInvite,
+  createBoardShareLink,
+  revokeInvite,
+  revokeBoardShareLink,
+} from "@/actions/invite";
 
 const ADMIN_ID = "admin_1";
 const ORG_ID = "org_1";
@@ -140,5 +146,73 @@ describe("createBoardShareLink", () => {
     const result = await createBoardShareLink({ boardId: "missing" });
 
     expect(result).toEqual({ error: "Board not found" });
+  });
+});
+
+describe("revokeInvite", () => {
+  it("rejects a non-admin caller", async () => {
+    prismaMock.membership.findUnique.mockResolvedValue({ ...adminMembership, role: "MEMBER" });
+
+    const result = await revokeInvite(ORG_ID, "invite_1");
+
+    expect(result).toEqual({ error: "Administrator rights required" });
+    expect(prismaMock.invite.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("only deletes an invite that belongs to the caller's organization", async () => {
+    prismaMock.membership.findUnique.mockResolvedValue(adminMembership);
+    prismaMock.invite.deleteMany.mockResolvedValue({ count: 1 });
+
+    const result = await revokeInvite(ORG_ID, "invite_1");
+
+    expect(prismaMock.invite.deleteMany).toHaveBeenCalledWith({
+      where: { id: "invite_1", organizationId: ORG_ID },
+    });
+    expect(result).toEqual({ success: "Invitation canceled" });
+  });
+
+  it("does not touch an invite from another organization", async () => {
+    prismaMock.membership.findUnique.mockResolvedValue(adminMembership);
+    prismaMock.invite.deleteMany.mockResolvedValue({ count: 0 });
+
+    const result = await revokeInvite(ORG_ID, "invite_of_other_org");
+
+    expect(result).toEqual({ error: "Invitation not found" });
+  });
+});
+
+describe("revokeBoardShareLink", () => {
+  it("only revokes a link that belongs to the given board", async () => {
+    prismaMock.board.findUnique.mockResolvedValue({ id: "board_1", organizationId: ORG_ID } as any);
+    prismaMock.membership.findUnique.mockResolvedValue(adminMembership);
+    prismaMock.boardShareLink.updateMany.mockResolvedValue({ count: 1 });
+
+    const result = await revokeBoardShareLink("board_1", "link_1");
+
+    expect(prismaMock.boardShareLink.updateMany).toHaveBeenCalledWith({
+      where: { id: "link_1", boardId: "board_1" },
+      data: { revoked: true },
+    });
+    expect(result).toEqual({ success: "Link revoked" });
+  });
+
+  it("does not revoke a link of a different board", async () => {
+    prismaMock.board.findUnique.mockResolvedValue({ id: "board_1", organizationId: ORG_ID } as any);
+    prismaMock.membership.findUnique.mockResolvedValue(adminMembership);
+    prismaMock.boardShareLink.updateMany.mockResolvedValue({ count: 0 });
+
+    const result = await revokeBoardShareLink("board_1", "link_of_other_board");
+
+    expect(result).toEqual({ error: "Link not found" });
+  });
+
+  it("rejects a caller who is not a member of the board's organization", async () => {
+    prismaMock.board.findUnique.mockResolvedValue({ id: "board_1", organizationId: ORG_ID } as any);
+    prismaMock.membership.findUnique.mockResolvedValue(null);
+
+    const result = await revokeBoardShareLink("board_1", "link_1");
+
+    expect(result).toEqual({ error: "You are not a member of this organization" });
+    expect(prismaMock.boardShareLink.updateMany).not.toHaveBeenCalled();
   });
 });

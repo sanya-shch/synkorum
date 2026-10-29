@@ -68,7 +68,12 @@ export const acceptOrgInvite = async (token: string) =>
 export const revokeInvite = async (organizationId: string, inviteId: string) =>
   toActionResult(async () => {
     await requireOrgAdmin(organizationId);
-    await db.invite.delete({ where: { id: inviteId } });
+
+    // Scope the delete to the organization the caller is an admin of. Deleting by id
+    // alone would let an admin of org A cancel invitations that belong to org B.
+    const { count } = await db.invite.deleteMany({ where: { id: inviteId, organizationId } });
+    if (count === 0) return { error: "Invitation not found" };
+
     return { success: "Invitation canceled" };
   });
 
@@ -97,10 +102,13 @@ export const revokeBoardShareLink = async (boardId: string, linkId: string) =>
 
     await requireOrgMember(board.organizationId);
 
-    await db.boardShareLink.update({
-      where: { id: linkId },
+    // Scope the update to this board: the caller was only authorized for `boardId`,
+    // so a linkId belonging to a different board must not be touched.
+    const { count } = await db.boardShareLink.updateMany({
+      where: { id: linkId, boardId },
       data: { revoked: true },
     });
+    if (count === 0) return { error: "Link not found" };
 
     return { success: "Link revoked" };
   });
