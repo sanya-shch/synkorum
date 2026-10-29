@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   const hashedPassword = await hashPassword(password);
 
   await db.$transaction([
-    db.user.update({ where: { id: user.id }, data: { hashedPassword } }),
+    db.user.update({ where: { id: user.id }, data: { hashedPassword, passwordChangedAt: new Date() } }),
     db.passwordResetToken.delete({ where: { id: resetToken.id } }),
   ]);
 

@@ -20,6 +20,8 @@ model User {
   emailVerified  DateTime?
   image          String?
   hashedPassword String
+  // Sessions issued before this moment are rejected (set on password reset).
+  passwordChangedAt DateTime?
 
   memberships Membership[]
   favorites   BoardFavorite[]

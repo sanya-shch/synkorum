@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { verifySessionToken } from "@/lib/jwt";
+import { isSessionRevoked } from "@/lib/session-validity";
 import { SESSION_COOKIE } from "@/lib/constants";
 import { AppError } from "./errors";
 
@@ -17,6 +18,7 @@ export async function getCurrentUser() {
 
   const user = await db.user.findUnique({ where: { id: payload.userId } });
   if (!user || !user.emailVerified) return null;
+  if (isSessionRevoked(payload.issuedAt, user.passwordChangedAt)) return null;
 
   return user;
 }

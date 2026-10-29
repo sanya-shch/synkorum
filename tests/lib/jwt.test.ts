@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { SignJWT } from "jose";
 import { signSessionToken, verifySessionToken } from "@/lib/jwt";
 
 describe("session JWT", () => {
@@ -6,7 +7,7 @@ describe("session JWT", () => {
     const token = await signSessionToken({ userId: "user_1" });
     const payload = await verifySessionToken(token);
 
-    expect(payload).toEqual({ userId: "user_1" });
+    expect(payload).toEqual({ userId: "user_1", issuedAt: expect.any(Number) });
   });
 
   it("rejects a tampered token", async () => {
@@ -32,5 +33,16 @@ describe("session JWT", () => {
     const result = await verifySessionToken(forged);
 
     expect(result).toBeNull();
+  });
+
+  it("rejects a token signed with a different algorithm", async () => {
+    const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
+    const token = await new SignJWT({ userId: "user_1" })
+      .setProtectedHeader({ alg: "HS512" })
+      .setIssuedAt()
+      .setExpirationTime("1h")
+      .sign(secret);
+
+    expect(await verifySessionToken(token)).toBeNull();
   });
 });
