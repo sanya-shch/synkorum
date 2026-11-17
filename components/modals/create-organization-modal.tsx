@@ -47,7 +47,7 @@ export const CreateOrganizationModal = () => {
 
         setName("");
         onClose();
-        router.push("/");
+        router.push("/dashboard");
         router.refresh();
       }
     });

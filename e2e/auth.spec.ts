@@ -22,7 +22,7 @@ test.describe("login", () => {
     await page.getByPlaceholder("Password").fill(user.password);
     await page.getByRole("button", { name: "Log in" }).click();
 
-    await page.waitForURL("/");
+    await page.waitForURL("/dashboard");
   });
 
   test("shows the same error for a wrong password as for an unknown email", async ({ page }) => {

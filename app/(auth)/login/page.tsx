@@ -8,11 +8,12 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginSchema } from "@/schemas";
 import { getSafeCallbackUrl } from "@/lib/safe-redirect";
+import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"));
+  const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"), DEFAULT_LOGIN_REDIRECT);
 
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);

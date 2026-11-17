@@ -71,7 +71,7 @@ export const OrganizationSettingsModal = () => {
         return;
       }
       onClose();
-      router.push("/");
+      router.push("/dashboard");
       router.refresh();
     });
   };
@@ -86,7 +86,7 @@ export const OrganizationSettingsModal = () => {
         return;
       }
       onClose();
-      router.push("/");
+      router.push("/dashboard");
       router.refresh();
     });
   };

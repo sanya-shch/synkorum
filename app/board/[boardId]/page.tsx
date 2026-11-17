@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
@@ -9,6 +10,11 @@ import { RenameModal } from "@/components/modals/rename-modal";
 import { Canvas } from "./_components/canvas";
 import { Loading } from "./_components/loading";
 
+export const metadata: Metadata = {
+  title: "Board",
+  robots: { index: false, follow: false },
+};
+
 interface BoardIdPageProps {
   params: Promise<{
     boardId: string;
@@ -18,10 +24,19 @@ interface BoardIdPageProps {
 const BoardIdPage = async ({ params }: BoardIdPageProps) => {
   const { boardId } = await params;
 
-  const board = await db.board.findUnique({ where: { id: boardId } });
+  const board = await db.board.findUnique({
+    where: { id: boardId },
+    include: { organization: { select: { name: true } } },
+  });
   if (!board) return notFound();
 
-  const boardData = { id: board.id, title: board.title };
+  // Anonymous share-link guests only get the board itself, never the team's name.
+  const boardData = (isMember: boolean) => ({
+    id: board.id,
+    title: board.title,
+    organizationId: board.organizationId,
+    organizationName: isMember ? board.organization.name : null,
+  });
 
   const user = await getCurrentUser();
 
@@ -39,7 +54,7 @@ const BoardIdPage = async ({ params }: BoardIdPageProps) => {
       return (
         <>
           <Room roomId={boardId} fallback={<Loading />}>
-            <Canvas board={boardData} />
+            <Canvas board={boardData(true)} isMember />
           </Room>
           <RenameModal />
         </>
@@ -62,7 +77,7 @@ const BoardIdPage = async ({ params }: BoardIdPageProps) => {
       return (
         <>
           <Room roomId={boardId} fallback={<Loading />}>
-            <Canvas board={boardData} />
+            <Canvas board={boardData(false)} isMember={false} />
           </Room>
           <RenameModal />
         </>

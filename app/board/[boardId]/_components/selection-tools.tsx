@@ -135,7 +135,7 @@ export const SelectionTools = memo(({ camera, setLastUsedColor }: SelectionTools
 
   return (
     <div
-      className="absolute p-3 rounded-xl bg-white shadow-sm border flex select-none"
+      className="absolute z-10 flex select-none rounded-2xl border bg-white p-2 shadow-lg shadow-black/10"
       style={{
         transform: `translate(
           calc(${x}px - 50%),
@@ -146,7 +146,7 @@ export const SelectionTools = memo(({ camera, setLastUsedColor }: SelectionTools
       <ColorPicker onChange={setFill} />
 
       {selection.length > 1 && (
-        <div className="flex flex-col gap-y-1 pr-2 mr-2 border-r border-neutral-200">
+        <div className="flex flex-col gap-y-1 pr-2 mr-2 border-r border-border">
           <div className="flex items-center gap-x-0.5">
             <Hint label="Align left">
               <Button variant="board" size="icon" onClick={() => applyPositions(alignLeft)}>
@@ -194,7 +194,7 @@ export const SelectionTools = memo(({ camera, setLastUsedColor }: SelectionTools
       )}
 
       {selection.length > 2 && (
-        <div className="flex flex-col gap-y-1 pr-2 mr-2 border-r border-neutral-200">
+        <div className="flex flex-col gap-y-1 pr-2 mr-2 border-r border-border">
           <Hint label="Distribute horizontally">
             <Button
               variant="board"
@@ -229,7 +229,7 @@ export const SelectionTools = memo(({ camera, setLastUsedColor }: SelectionTools
         </Hint>
       </div>
 
-      <div className="flex items-center pl-2 ml-2 border-l border-neutral-200">
+      <div className="flex items-center pl-2 ml-2 border-l border-border">
         <Hint label="Delete">
           <Button variant="board" size="icon" onClick={deleteLayers}>
             <Trash2 />

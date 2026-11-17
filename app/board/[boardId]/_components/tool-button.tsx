@@ -24,10 +24,13 @@ export const ToolButton = ({
     <Hint label={label} side="right" sideOffset={14}>
       <Button
         data-testid={`tool-${label.toLowerCase().replace(/\s+/g, "-")}`}
+        aria-label={label}
+        aria-pressed={isActive}
         disabled={isDisabled}
         onClick={onClick}
         size="icon"
         variant={isActive ? "boardActive" : "board"}
+        className="size-9 shrink-0 cursor-pointer rounded-xl md:size-10 [&_svg:not([class*='size-'])]:size-[18px]"
       >
         <Icon />
       </Button>

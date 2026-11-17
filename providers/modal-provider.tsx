@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { RenameModal } from "@/components/modals/rename-modal";
 import { CreateOrganizationModal } from "@/components/modals/create-organization-modal";
 import { OrganizationSettingsModal } from "@/components/modals/organization-settings-modal";
+import { MembersModal } from "@/components/modals/members-modal";
 
 export const ModalProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -23,6 +24,7 @@ export const ModalProvider = () => {
       <RenameModal />
       <CreateOrganizationModal />
       <OrganizationSettingsModal />
+      <MembersModal />
     </>
   );
 };

@@ -16,7 +16,7 @@ import type { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { useRenameModal } from "@/store/use-rename-modal";
 import { deleteBoard } from "@/actions/board";
 import { Button } from "@/components/ui/button";
-import { createBoardShareLink } from "@/actions/invite";
+import { useBoardLinks } from "@/hooks/use-board-links";
 
 interface ActionsProps {
   children: React.ReactElement;
@@ -29,32 +29,9 @@ interface ActionsProps {
 export const Actions = ({ children, side, sideOffset, id, title }: ActionsProps) => {
   const router = useRouter();
   const { onOpen } = useRenameModal();
-  const [pending, startTransition] = useTransition();
-
-  const onCopyLink = () => {
-    navigator.clipboard
-      .writeText(`${window.location.origin}/board/${id}`)
-      .then(() => toast.success("Link copied"))
-      .catch(() => toast.error("Failed to copy link"));
-  };
-
-  const onCopyShareLink = (canEdit: boolean) => {
-    startTransition(async () => {
-      const result = await createBoardShareLink({ boardId: id, canEdit });
-
-      if ("error" in result || !("shareUrl" in result)) {
-        toast.error(result?.error ?? "Failed to create share link");
-        return;
-      }
-
-      await navigator.clipboard
-        .writeText(result.shareUrl)
-        .then(() =>
-          toast.success(canEdit ? "Anonymous share link copied" : "Read-only share link copied"),
-        )
-        .catch(() => toast.error("Failed to copy link"));
-    });
-  };
+  const [deletePending, startTransition] = useTransition();
+  const { pending: linkPending, onCopyLink, onCopyShareLink } = useBoardLinks(id);
+  const pending = deletePending || linkPending;
 
   const onDelete = () => {
     startTransition(async () => {
@@ -67,7 +44,7 @@ export const Actions = ({ children, side, sideOffset, id, title }: ActionsProps)
 
       toast.success("Board deleted");
 
-      router.push("/");
+      router.push("/dashboard");
       router.refresh();
     });
   };

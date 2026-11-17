@@ -1,41 +1,33 @@
 "use client";
 
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { Plus, LayoutGrid } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { createBoard } from "@/actions/board";
+import { useCreateBoard } from "@/hooks/use-create-board";
+
+import { EmptyState } from "./empty-state";
 
 interface EmptyBoardsProps {
   organizationId: string;
 }
 
 export const EmptyBoards = ({ organizationId }: EmptyBoardsProps) => {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-
-  const onClick = () => {
-    startTransition(async () => {
-      const result = await createBoard({
-        organizationId,
-        title: "Untitled",
-        imageUrl: "file.svg",
-      });
-
-      if ("board" in result) router.push(`/board/${result.board!.id}`);
-    });
-  };
+  const { create, isPending } = useCreateBoard(organizationId);
 
   return (
-    <div className="h-full flex flex-col items-center justify-center">
-      <h2 className="text-2xl font-semibold mt-6">No boards yet</h2>
-
-      <p className="text-muted-foreground text-sm mt-2">Create a board for this team</p>
-
-      <div className="mt-6">
-        <Button disabled={isPending} onClick={onClick} size="lg" className="cursor-pointer">
-          Create a board
-        </Button>
-      </div>
-    </div>
+    <EmptyState
+      icon={LayoutGrid}
+      title="No boards yet"
+      description="Create a board for this team and start collaborating on a blank canvas."
+    >
+      <Button
+        disabled={isPending}
+        onClick={create}
+        className="h-11 cursor-pointer gap-x-2 rounded-xl px-5"
+      >
+        <Plus className="size-4" />
+        Create a board
+      </Button>
+    </EmptyState>
   );
 };

@@ -39,7 +39,7 @@ export async function GET(
     return NextResponse.redirect(new URL("/invalid-link", request.url));
   }
 
-  const response = NextResponse.redirect(new URL("/", request.url));
+  const response = NextResponse.redirect(new URL("/dashboard", request.url));
 
   const cookie = setActiveOrganizationCookie(result.organizationId);
   response.cookies.set(cookie.name, cookie.value, cookie.options);

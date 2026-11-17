@@ -1,47 +1,37 @@
 "use client";
 
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-import { createBoard } from "@/actions/board";
+import { cn } from "@/lib/utils";
+import { useCreateBoard } from "@/hooks/use-create-board";
 
 interface NewBoardButtonProps {
   organizationId: string;
-  disabled?: boolean;
 }
 
-const PLACEHOLDER_IMAGE = "file.svg";
-
-export const NewBoardButton = ({ organizationId, disabled }: NewBoardButtonProps) => {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-
-  const onClick = () => {
-    startTransition(async () => {
-      const result = await createBoard({
-        organizationId,
-        title: "Untitled",
-        imageUrl: PLACEHOLDER_IMAGE,
-      });
-
-      if ("board" in result) {
-        router.push(`/board/${result.board!.id}`);
-      }
-    });
-  };
+export const NewBoardButton = ({ organizationId }: NewBoardButtonProps) => {
+  const { create, isPending } = useCreateBoard(organizationId);
 
   return (
     <button
-      disabled={disabled || isPending}
-      onClick={onClick}
+      type="button"
+      disabled={isPending}
+      onClick={create}
       className={cn(
-        "col-span-1 aspect-[100/127] bg-sky-600 rounded-lg cursor-pointer hover:bg-sky-800 flex flex-col items-center justify-center py-6",
-        (disabled || isPending) && "opacity-75 hover:bg-sky-600 cursor-not-allowed",
+        "flex min-h-[112px] w-full cursor-pointer items-center gap-x-4 rounded-2xl border border-dashed border-primary/50 bg-lavender/70 p-5 text-left transition hover:bg-lavender sm:h-full sm:min-h-[220px] sm:flex-col sm:items-start sm:justify-center sm:gap-y-5 sm:p-7",
+        isPending && "cursor-not-allowed opacity-70",
       )}
     >
-      <Plus className="h-12 w-12 text-white stroke-1" />
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/30">
+        <Plus className="size-6" />
+      </span>
+
+      <span>
+        <span className="block text-lg font-semibold tracking-tight">Create a new board</span>
+        <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
+          Start with a blank canvas and shape your team&apos;s next idea.
+        </span>
+      </span>
     </button>
   );
 };

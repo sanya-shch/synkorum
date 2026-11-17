@@ -1,7 +1,11 @@
-export const EmptyFavorites = () => (
-  <div className="h-full flex flex-col items-center justify-center">
-    <h2 className="text-2xl font-semibold mt-6">No favorite boards!</h2>
+import { Star } from "lucide-react";
 
-    <p className="text-muted-foreground textg-sm mt-2">Try adding a board to your favorites</p>
-  </div>
+import { EmptyState } from "./empty-state";
+
+export const EmptyFavorites = () => (
+  <EmptyState
+    icon={Star}
+    title="No favorite boards!"
+    description="Try adding a board to your favorites."
+  />
 );

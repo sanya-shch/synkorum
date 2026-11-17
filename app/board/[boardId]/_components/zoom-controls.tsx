@@ -15,9 +15,9 @@ interface ZoomControlsProps {
 
 export const ZoomControls = ({ zoom, onZoomIn, onZoomOut, onReset }: ZoomControlsProps) => {
   return (
-    <div className="absolute bottom-2 left-2 bg-white rounded-md p-1.5 flex items-center gap-x-1 shadow-md select-none">
+    <div className="absolute bottom-[72px] right-3 z-10 flex select-none items-center gap-x-1 rounded-2xl border bg-white p-1.5 shadow-lg shadow-black/5 md:bottom-4 md:right-4">
       <Hint label="Zoom out" side="top" sideOffset={14}>
-        <Button variant="board" size="icon" onClick={onZoomOut} disabled={zoom <= MIN_ZOOM}>
+        <Button variant="board" size="icon" aria-label="Zoom out" className="size-9 cursor-pointer rounded-xl" onClick={onZoomOut} disabled={zoom <= MIN_ZOOM}>
           <Minus />
         </Button>
       </Hint>
@@ -25,14 +25,14 @@ export const ZoomControls = ({ zoom, onZoomIn, onZoomOut, onReset }: ZoomControl
       <Hint label="Reset zoom to 100%" side="top" sideOffset={14}>
         <button
           onClick={onReset}
-          className="text-xs font-medium text-neutral-600 w-12 text-center hover:text-neutral-900"
+          className="w-12 cursor-pointer text-center text-sm font-medium text-slate-700 hover:text-primary"
         >
           {Math.round(zoom * 100)}%
         </button>
       </Hint>
 
       <Hint label="Zoom in" side="top" sideOffset={14}>
-        <Button variant="board" size="icon" onClick={onZoomIn} disabled={zoom >= MAX_ZOOM}>
+        <Button variant="board" size="icon" aria-label="Zoom in" className="size-9 cursor-pointer rounded-xl" onClick={onZoomIn} disabled={zoom >= MAX_ZOOM}>
           <Plus />
         </Button>
       </Hint>

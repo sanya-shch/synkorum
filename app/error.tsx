@@ -28,8 +28,8 @@ export default function GlobalError({
         <Button onClick={reset} variant="outline">
           Try again
         </Button>
-        <Link href="/" className={cn(buttonVariants())}>
-          Go home
+        <Link href="/dashboard" className={cn(buttonVariants())}>
+          Go to dashboard
         </Link>
       </div>
     </div>

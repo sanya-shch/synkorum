@@ -44,7 +44,7 @@ import { useDuplicateLayers } from "@/hooks/use-duplicate-layers";
 
 import { Info } from "./info";
 import { Toolbar } from "./toolbar";
-import { Participants } from "./participants";
+import { SavePill } from "./save-status";
 import { CursorsPresence } from "./cursors-presence";
 import { LayerPreview } from "./layer-preview";
 import { SelectionBox } from "./selection-box";
@@ -56,10 +56,21 @@ interface CanvasProps {
   board: {
     id: string;
     title: string;
+    organizationId: string;
+    organizationName: string | null;
   };
+  isMember: boolean;
 }
 
-export const Canvas = ({ board }: CanvasProps) => {
+// Dot grid that pans and zooms with the camera. Spacing doubles when zoomed far out so
+// the dots never turn into a solid wash.
+const gridStep = (zoom: number) => {
+  let step = 24 * zoom;
+  while (step < 14) step *= 2;
+  return step;
+};
+
+export const Canvas = ({ board, isMember }: CanvasProps) => {
   const [canvasState, setCanvasState] = useState<CanvasState>({
     mode: CanvasMode.None,
   });
@@ -659,10 +670,15 @@ export const Canvas = ({ board }: CanvasProps) => {
   ]);
 
   return (
-    <main className="h-full w-full relative bg-neutral-100 touch-none">
-      <Info board={board} />
-
-      <Participants />
+    <main
+      className="relative h-full w-full touch-none overflow-hidden bg-canvas"
+      style={{
+        backgroundImage: "radial-gradient(circle, rgb(30 31 58 / 0.16) 1px, transparent 1.5px)",
+        backgroundSize: `${gridStep(camera.zoom)}px ${gridStep(camera.zoom)}px`,
+        backgroundPosition: `${camera.x}px ${camera.y}px`,
+      }}
+    >
+      <Info board={board} isMember={isMember} />
 
       <Toolbar
         canvasState={canvasState}
@@ -678,9 +694,11 @@ export const Canvas = ({ board }: CanvasProps) => {
 
       <ZoomControls zoom={camera.zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} onReset={resetZoom} />
 
+      <SavePill />
+
       <svg
         data-testid="canvas-svg"
-        className="h-[100vh] w-[100vw]"
+        className="block h-full w-full"
         onWheel={onWheel}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}

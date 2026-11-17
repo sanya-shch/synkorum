@@ -1,39 +1,75 @@
-import { getActiveOrganization, getMyOrganizationsWithRole } from "@/lib/active-org";
+import type { Metadata } from "next";
+import Link from "next/link";
 
+import { db } from "@/lib/db";
+import { requireAuth } from "@/lib/current-user";
+import { getActiveOrganization, getMyOrganizationsWithRole } from "@/lib/active-org";
+import { LogoMark } from "@/components/logo";
+
+import { DashboardSidebar } from "./_components/dashboard-sidebar";
+import { MobileHeader } from "./_components/mobile-header";
+import { MobileNav } from "./_components/mobile-nav";
 import { Navbar } from "./_components/navbar";
-import { OrgSidebar } from "./_components/org-sidebar";
-import { Sidebar } from "./_components/sidebar";
 import { NoOrganization } from "./_components/no-organization";
+import { UserMenu } from "./_components/user-menu";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false },
+};
 
 const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
+  const user = await requireAuth();
   const organization = await getActiveOrganization();
   const memberships = await getMyOrganizationsWithRole();
-  const organizations = memberships.map((m) => m.organization);
+  const organizations = memberships.map((m) => ({ id: m.organization.id, name: m.organization.name }));
+
+  const userInfo = { name: user.name, email: user.email, image: user.image };
 
   if (!organization) {
     return (
-      <main className="h-full">
-        <Sidebar organizations={organizations} activeOrgId="" />
-        <div className="pl-[60px] h-full flex items-center justify-center">
+      <main className="flex min-h-dvh flex-col">
+        <header className="flex items-center justify-between px-4 py-4 sm:px-8">
+          <Link href="/" className="flex items-center gap-x-2.5">
+            <LogoMark />
+            <span className="text-lg font-semibold tracking-tight">Synkorum</span>
+          </Link>
+          <UserMenu {...userInfo} />
+        </header>
+
+        <div className="flex flex-1 items-center justify-center">
           <NoOrganization />
         </div>
       </main>
     );
   }
 
+  const [boards, favorites, members] = await Promise.all([
+    db.board.count({ where: { organizationId: organization.id } }),
+    db.boardFavorite.count({
+      where: { userId: user.id, board: { organizationId: organization.id } },
+    }),
+    db.membership.count({ where: { organizationId: organization.id } }),
+  ]);
+
   return (
-    <main className="h-full">
-      <Sidebar organizations={organizations} activeOrgId={organization.id} />
-      <div className="pl-[60px] h-full">
-        <div className="flex gap-x-3 h-full">
-          <OrgSidebar organization={organization} />
-          <div className="h-full flex-1">
-            <Navbar organization={organization} />
-            {children}
-          </div>
-        </div>
-      </div>
-    </main>
+    <div className="min-h-dvh lg:pl-64">
+      <DashboardSidebar
+        organizations={organizations}
+        activeOrgId={organization.id}
+        counts={{ boards, favorites, members }}
+        user={userInfo}
+      />
+
+      <MobileHeader organizations={organizations} activeOrgId={organization.id} user={userInfo} />
+
+      <main className="mx-auto w-full max-w-[1240px] px-4 pb-24 sm:px-6 lg:px-10 lg:pb-10">
+        <Navbar organization={organization} />
+        {children}
+      </main>
+
+      <MobileNav organizationId={organization.id} />
+    </div>
   );
 };
 
