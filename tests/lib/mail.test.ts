@@ -21,7 +21,7 @@ describe("sendOrgInviteEmail", () => {
     });
 
     const { html } = sendMock.mock.calls[0][0];
-    expect(html).not.toContain("<a href=\"https://evil.example\">");
+    expect(html).not.toContain('<a href="https://evil.example">');
     expect(html).toContain("&lt;a href=&quot;https://evil.example&quot;&gt;");
     expect(html).toContain("/invite/tok");
   });

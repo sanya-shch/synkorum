@@ -8,10 +8,11 @@ export const Workspace = () => (
     <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
       <div className="grid items-center gap-10 rounded-[32px] bg-warm/70 p-6 sm:p-10 lg:grid-cols-2 lg:gap-14 lg:p-14">
         <div>
-          <SectionHeading eyebrow="A home for your work" title="Everything your team needs, in one place.">
-            <p>
-              Keep your boards organized and your team connected with dedicated workspaces.
-            </p>
+          <SectionHeading
+            eyebrow="A home for your work"
+            title="Everything your team needs, in one place."
+          >
+            <p>Keep your boards organized and your team connected with dedicated workspaces.</p>
           </SectionHeading>
 
           <ul className="mt-7 space-y-3">

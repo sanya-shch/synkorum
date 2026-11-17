@@ -6,7 +6,13 @@ import { format } from "date-fns";
 const subscribe = () => () => {};
 
 const greetingFor = (hour: number) =>
-  hour < 5 ? "Good evening" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  hour < 5
+    ? "Good evening"
+    : hour < 12
+      ? "Good morning"
+      : hour < 18
+        ? "Good afternoon"
+        : "Good evening";
 
 // The greeting depends on the visitor's clock, so it is computed on the client only:
 // the server snapshot is a neutral fallback, which avoids a hydration mismatch.

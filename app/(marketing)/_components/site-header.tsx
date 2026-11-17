@@ -23,7 +23,11 @@ export const SiteHeader = ({ isLoggedIn }: { isLoggedIn: boolean }) => (
 
       <nav aria-label="Sections" className="hidden items-center gap-x-8 md:flex">
         {NAV_LINKS.map((link) => (
-          <a key={link.href} href={link.href} className="text-sm text-muted-foreground transition hover:text-foreground">
+          <a
+            key={link.href}
+            href={link.href}
+            className="text-sm text-muted-foreground transition hover:text-foreground"
+          >
             {link.label}
           </a>
         ))}

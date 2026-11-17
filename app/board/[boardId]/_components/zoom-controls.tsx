@@ -17,7 +17,14 @@ export const ZoomControls = ({ zoom, onZoomIn, onZoomOut, onReset }: ZoomControl
   return (
     <div className="absolute bottom-[72px] right-3 z-10 flex select-none items-center gap-x-1 rounded-2xl border bg-white p-1.5 shadow-lg shadow-black/5 md:bottom-4 md:right-4">
       <Hint label="Zoom out" side="top" sideOffset={14}>
-        <Button variant="board" size="icon" aria-label="Zoom out" className="size-9 cursor-pointer rounded-xl" onClick={onZoomOut} disabled={zoom <= MIN_ZOOM}>
+        <Button
+          variant="board"
+          size="icon"
+          aria-label="Zoom out"
+          className="size-9 cursor-pointer rounded-xl"
+          onClick={onZoomOut}
+          disabled={zoom <= MIN_ZOOM}
+        >
           <Minus />
         </Button>
       </Hint>
@@ -32,7 +39,14 @@ export const ZoomControls = ({ zoom, onZoomIn, onZoomOut, onReset }: ZoomControl
       </Hint>
 
       <Hint label="Zoom in" side="top" sideOffset={14}>
-        <Button variant="board" size="icon" aria-label="Zoom in" className="size-9 cursor-pointer rounded-xl" onClick={onZoomIn} disabled={zoom >= MAX_ZOOM}>
+        <Button
+          variant="board"
+          size="icon"
+          aria-label="Zoom in"
+          className="size-9 cursor-pointer rounded-xl"
+          onClick={onZoomIn}
+          disabled={zoom >= MAX_ZOOM}
+        >
           <Plus />
         </Button>
       </Hint>

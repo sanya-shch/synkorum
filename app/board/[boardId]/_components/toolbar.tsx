@@ -37,13 +37,25 @@ export const Toolbar = ({
   const isInserting = (layerType: LayerType) =>
     canvasState.mode === CanvasMode.Inserting && canvasState.layerType === layerType;
 
-  const insert = (layerType: LayerType.Note | LayerType.Text | LayerType.Rectangle | LayerType.Ellipse | LayerType.Diamond | LayerType.Line) => () =>
-    setCanvasState({ mode: CanvasMode.Inserting, layerType });
+  const insert =
+    (
+      layerType:
+        | LayerType.Note
+        | LayerType.Text
+        | LayerType.Rectangle
+        | LayerType.Ellipse
+        | LayerType.Diamond
+        | LayerType.Line,
+    ) =>
+    () =>
+      setCanvasState({ mode: CanvasMode.Inserting, layerType });
 
   return (
     // Desktop: a floating column under the header. Phones: one row along the bottom edge.
     <div className="absolute inset-x-3 bottom-3 z-10 flex items-stretch gap-x-2 md:inset-x-auto md:bottom-auto md:left-4 md:top-24 md:flex-col md:gap-y-3">
-      <div className={cardClass + " min-w-0 flex-1 overflow-x-auto md:flex-none md:overflow-visible"}>
+      <div
+        className={cardClass + " min-w-0 flex-1 overflow-x-auto md:flex-none md:overflow-visible"}
+      >
         <ToolButton
           label="Select"
           icon={MousePointer2}

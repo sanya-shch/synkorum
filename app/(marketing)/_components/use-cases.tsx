@@ -26,7 +26,10 @@ export const UseCases = () => (
   <section id="use-cases" className="scroll-mt-20 py-20 sm:py-24">
     <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
       <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-        <SectionHeading eyebrow="For every kind of thinking" title="One canvas. Many ways to think." />
+        <SectionHeading
+          eyebrow="For every kind of thinking"
+          title="One canvas. Many ways to think."
+        />
         <p className="max-w-sm leading-relaxed text-muted-foreground">
           General-purpose drawing tools make it easy to shape discussions into clear, shared visual
           work.
@@ -49,7 +52,10 @@ export const UseCases = () => (
 const STEPS = [
   { title: "Create", text: "Start with a blank canvas and bring your first ideas to life." },
   { title: "Collaborate", text: "Invite teammates and work together in real time." },
-  { title: "Organize", text: "Arrange your ideas, align your elements, and turn scattered thoughts into clarity." },
+  {
+    title: "Organize",
+    text: "Arrange your ideas, align your elements, and turn scattered thoughts into clarity.",
+  },
 ];
 
 export const Steps = () => (

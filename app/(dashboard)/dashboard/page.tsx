@@ -30,7 +30,9 @@ const DashboardPage = async ({ searchParams }: DashboardPageProps) => {
         <div className="mb-10 flex items-end justify-between gap-4">
           <div className="min-w-0">
             <Greeting name={firstName} />
-            <p className="mt-2 text-muted-foreground">Your team&apos;s ideas, organized in one place.</p>
+            <p className="mt-2 text-muted-foreground">
+              Your team&apos;s ideas, organized in one place.
+            </p>
           </div>
 
           <CreateBoardButton organizationId={organization.id} />

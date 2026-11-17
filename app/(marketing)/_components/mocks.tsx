@@ -3,10 +3,30 @@ import { cn } from "@/lib/utils";
 // Small, static drawings of the real product (notes, flow nodes, cursors). Everything here
 // is decorative, so it is hidden from assistive tech by the parents (aria-hidden).
 
-export const Cursor = ({ name, className, tone = "primary" }: { name: string; className?: string; tone?: "primary" | "rose" }) => (
+export const Cursor = ({
+  name,
+  className,
+  tone = "primary",
+}: {
+  name: string;
+  className?: string;
+  tone?: "primary" | "rose";
+}) => (
   <div className={cn("absolute flex items-start", className)}>
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={tone === "primary" ? "text-primary" : "text-rose-500"}>
-      <path d="M2 2l12 5-5 1.5L7 14 2 2z" fill="white" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      fill="none"
+      className={tone === "primary" ? "text-primary" : "text-rose-500"}
+    >
+      <path
+        d="M2 2l12 5-5 1.5L7 14 2 2z"
+        fill="white"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
     </svg>
     <span
       className={cn(
@@ -47,7 +67,15 @@ export const Note = ({
   </div>
 );
 
-export const FlowNode = ({ label, caption, className }: { label: string; caption?: string; className?: string }) => (
+export const FlowNode = ({
+  label,
+  caption,
+  className,
+}: {
+  label: string;
+  caption?: string;
+  className?: string;
+}) => (
   <div className={cn("rounded-lg border-2 border-primary bg-white px-2.5 py-1.5", className)}>
     {caption && <p className="text-[8px] font-semibold text-primary">{caption}</p>}
     <p className="text-[10px] font-semibold leading-tight">{label}</p>
@@ -57,7 +85,9 @@ export const FlowNode = ({ label, caption, className }: { label: string; caption
 export const DiamondNode = ({ label, className }: { label: string; className?: string }) => (
   <div className={cn("relative size-14 shrink-0", className)}>
     <div className="absolute inset-2 rotate-45 rounded-md border-2 border-primary bg-white" />
-    <span className="absolute inset-0 grid place-items-center text-[9px] font-semibold">{label}</span>
+    <span className="absolute inset-0 grid place-items-center text-[9px] font-semibold">
+      {label}
+    </span>
   </div>
 );
 
@@ -78,7 +108,9 @@ const WindowChrome = ({ title, children }: { title: string; children: React.Reac
       <span className="size-2.5 rounded-full bg-rose-400" />
       <span className="size-2.5 rounded-full bg-amber-300" />
       <span className="size-2.5 rounded-full bg-emerald-400" />
-      <span className="mx-auto rounded-md bg-muted px-4 py-0.5 text-[10px] text-muted-foreground">{title}</span>
+      <span className="mx-auto rounded-md bg-muted px-4 py-0.5 text-[10px] text-muted-foreground">
+        {title}
+      </span>
       <span className="flex -space-x-1.5">
         <Avatar letter="M" />
         <Avatar letter="D" className="bg-periwinkle" />
@@ -102,9 +134,24 @@ export const HeroBoard = () => (
     <WindowChrome title="New product ideas">
       <div className="relative h-[300px] bg-canvas sm:h-[340px]">
         <ToolColumn />
-        <Note title="Improve onboarding" body="Make first steps clear." rotate={-4} className="absolute left-[16%] top-[14%] w-32" />
-        <Note title="User feedback" body="Clarify sharing access." tone="periwinkle" rotate={3} className="absolute left-[50%] top-[8%] w-32" />
-        <Note title="Launch strategy" rotate={-2} className="absolute right-[4%] top-[34%] hidden w-28 sm:block" />
+        <Note
+          title="Improve onboarding"
+          body="Make first steps clear."
+          rotate={-4}
+          className="absolute left-[16%] top-[14%] w-32"
+        />
+        <Note
+          title="User feedback"
+          body="Clarify sharing access."
+          tone="periwinkle"
+          rotate={3}
+          className="absolute left-[50%] top-[8%] w-32"
+        />
+        <Note
+          title="Launch strategy"
+          rotate={-2}
+          className="absolute right-[4%] top-[34%] hidden w-28 sm:block"
+        />
 
         <div className="absolute bottom-[12%] left-[12%] flex items-center gap-x-2 sm:gap-x-3">
           <FlowNode caption="Research" label="Find patterns" />
@@ -115,7 +162,9 @@ export const HeroBoard = () => (
         </div>
 
         <Cursor name="Maya" className="left-[44%] top-[44%]" />
-        <span className="absolute bottom-3 right-3 rounded-lg border bg-white px-2 py-1 text-[10px] font-medium text-muted-foreground shadow-sm">100%</span>
+        <span className="absolute bottom-3 right-3 rounded-lg border bg-white px-2 py-1 text-[10px] font-medium text-muted-foreground shadow-sm">
+          100%
+        </span>
       </div>
     </WindowChrome>
 
@@ -131,22 +180,39 @@ export const HeroBoard = () => (
 );
 
 export const EditorMock = () => (
-  <div className="overflow-hidden rounded-2xl border bg-card shadow-xl shadow-primary/10" aria-hidden>
+  <div
+    className="overflow-hidden rounded-2xl border bg-card shadow-xl shadow-primary/10"
+    aria-hidden
+  >
     <div className="flex items-center gap-x-2 border-b px-4 py-2.5">
-      <span className="flex size-6 items-center justify-center rounded-md bg-primary text-[10px] font-bold text-white">S</span>
+      <span className="flex size-6 items-center justify-center rounded-md bg-primary text-[10px] font-bold text-white">
+        S
+      </span>
       <span className="text-[11px] font-semibold">Checkout experience</span>
       <span className="text-[10px] text-muted-foreground">Saved</span>
       <span className="ml-auto flex -space-x-1.5">
         <Avatar letter="M" />
         <Avatar letter="D" className="bg-periwinkle" />
       </span>
-      <span className="rounded-md bg-primary px-2.5 py-1 text-[10px] font-medium text-white">Share</span>
+      <span className="rounded-md bg-primary px-2.5 py-1 text-[10px] font-medium text-white">
+        Share
+      </span>
     </div>
 
     <div className="relative h-[300px] bg-canvas">
       <ToolColumn />
-      <Note title="Where do people hesitate?" tone="lavender" rotate={-3} className="absolute left-[18%] top-[10%] w-36" />
-      <Note title="Clarify fees" tone="periwinkle" rotate={2} className="absolute left-[56%] top-[14%] w-28" />
+      <Note
+        title="Where do people hesitate?"
+        tone="lavender"
+        rotate={-3}
+        className="absolute left-[18%] top-[10%] w-36"
+      />
+      <Note
+        title="Clarify fees"
+        tone="periwinkle"
+        rotate={2}
+        className="absolute left-[56%] top-[14%] w-28"
+      />
 
       <div className="absolute left-[44%] top-[40%] flex flex-col items-center rounded-lg border bg-white p-1 shadow-sm">
         <span className="size-3 rounded-sm bg-primary/80" />
@@ -164,10 +230,23 @@ export const EditorMock = () => (
 );
 
 export const CollabMock = () => (
-  <div className="relative h-[300px] overflow-hidden rounded-2xl border bg-card shadow-xl shadow-primary/10" aria-hidden>
+  <div
+    className="relative h-[300px] overflow-hidden rounded-2xl border bg-card shadow-xl shadow-primary/10"
+    aria-hidden
+  >
     <div className="absolute inset-0 bg-canvas" />
-    <Note title="Research findings" body="Keep context visible." rotate={-4} className="absolute left-[10%] top-[12%] w-32" />
-    <Note title="What to test next" tone="periwinkle" rotate={2} className="absolute right-[8%] top-[8%] w-32" />
+    <Note
+      title="Research findings"
+      body="Keep context visible."
+      rotate={-4}
+      className="absolute left-[10%] top-[12%] w-32"
+    />
+    <Note
+      title="What to test next"
+      tone="periwinkle"
+      rotate={2}
+      className="absolute right-[8%] top-[8%] w-32"
+    />
     <Cursor name="Maya" className="left-[26%] top-[46%]" />
     <Cursor name="Daniel" tone="rose" className="right-[18%] top-[44%]" />
     <div className="absolute bottom-[22%] left-1/2 -translate-x-1/2 rounded-lg border bg-white px-3 py-1.5 text-[11px] font-medium shadow-md">
@@ -225,9 +304,14 @@ export const PlanThumb = () => (
 );
 
 export const DashboardMock = () => (
-  <div className="flex h-[300px] overflow-hidden rounded-2xl border bg-card shadow-xl shadow-primary/10" aria-hidden>
+  <div
+    className="flex h-[300px] overflow-hidden rounded-2xl border bg-card shadow-xl shadow-primary/10"
+    aria-hidden
+  >
     <div className="hidden w-[22%] shrink-0 space-y-2 border-r bg-sidebar p-3 sm:block">
-      <span className="flex size-6 items-center justify-center rounded-md bg-primary text-[10px] font-bold text-white">S</span>
+      <span className="flex size-6 items-center justify-center rounded-md bg-primary text-[10px] font-bold text-white">
+        S
+      </span>
       <div className="h-6 rounded-md bg-lavender" />
       <div className="h-3 w-4/5 rounded bg-muted" />
       <div className="h-3 w-3/5 rounded bg-muted" />

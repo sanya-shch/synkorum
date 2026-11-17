@@ -44,15 +44,24 @@ export const MobileNav = ({ links, isLoggedIn }: MobileNavProps) => {
 
           <div className="mt-3 flex gap-3">
             {isLoggedIn ? (
-              <Link href="/dashboard" className="flex h-11 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-medium text-primary-foreground">
+              <Link
+                href="/dashboard"
+                className="flex h-11 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-medium text-primary-foreground"
+              >
                 Open dashboard
               </Link>
             ) : (
               <>
-                <Link href="/login" className="flex h-11 flex-1 items-center justify-center rounded-xl border bg-card text-sm font-medium">
+                <Link
+                  href="/login"
+                  className="flex h-11 flex-1 items-center justify-center rounded-xl border bg-card text-sm font-medium"
+                >
                   Log in
                 </Link>
-                <Link href="/register" className="flex h-11 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-medium text-primary-foreground">
+                <Link
+                  href="/register"
+                  className="flex h-11 flex-1 items-center justify-center rounded-xl bg-primary text-sm font-medium text-primary-foreground"
+                >
                   Get started
                 </Link>
               </>

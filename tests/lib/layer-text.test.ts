@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  escapeHtml,
-  toEditableHtml,
-  toPlainText,
-  MAX_LAYER_TEXT_LENGTH,
-} from "@/lib/layer-text";
+import { escapeHtml, toEditableHtml, toPlainText, MAX_LAYER_TEXT_LENGTH } from "@/lib/layer-text";
 
 describe("toEditableHtml", () => {
   it("escapes markup so a stored payload can never execute", () => {
@@ -55,7 +50,7 @@ describe("toPlainText", () => {
   });
 
   it("round-trips through the editor representation", () => {
-    const original = "x < y & \"quoted\"\nsecond line";
+    const original = 'x < y & "quoted"\nsecond line';
     expect(toPlainText(toEditableHtml(original))).toBe(original);
   });
 });

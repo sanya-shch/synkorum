@@ -38,7 +38,9 @@ const LandingPage = async () => {
       {/* "<" is escaped so the JSON can never close the script tag early. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+        }}
       />
 
       <SiteHeader isLoggedIn={isLoggedIn} />

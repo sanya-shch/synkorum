@@ -25,7 +25,9 @@ export const NavLink = ({ href, label, icon: Icon, isActive, count }: NavLinkPro
     <Icon className="size-[18px] shrink-0" />
     <span className="flex-1 truncate">{label}</span>
     {count !== undefined && (
-      <span className={cn("text-xs tabular-nums", isActive ? "text-primary" : "text-muted-foreground")}>
+      <span
+        className={cn("text-xs tabular-nums", isActive ? "text-primary" : "text-muted-foreground")}
+      >
         {count}
       </span>
     )}

@@ -118,7 +118,5 @@ export const Info = ({ board, isMember }: InfoProps) => {
 };
 
 export const InfoSkeleton = () => {
-  return (
-    <div className="absolute inset-x-0 top-0 z-20 h-14 border-b bg-white sm:h-16" />
-  );
+  return <div className="absolute inset-x-0 top-0 z-20 h-14 border-b bg-white sm:h-16" />;
 };

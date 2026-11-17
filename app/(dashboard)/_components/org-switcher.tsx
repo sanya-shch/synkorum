@@ -94,7 +94,10 @@ export const OrgSwitcher = ({ organizations, activeOrgId, className }: OrgSwitch
           </DropdownMenuItem>
         )}
 
-        <DropdownMenuItem onClick={openCreateTeam} className="cursor-pointer gap-x-2.5 rounded-lg p-2">
+        <DropdownMenuItem
+          onClick={openCreateTeam}
+          className="cursor-pointer gap-x-2.5 rounded-lg p-2"
+        >
           <Plus className="size-4" />
           Create a team
         </DropdownMenuItem>

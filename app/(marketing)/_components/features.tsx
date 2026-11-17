@@ -43,7 +43,12 @@ const FeatureCard = ({
       </span>
 
       <h3 className="mt-5 text-2xl font-semibold tracking-tight">{title}</h3>
-      <p className={cn("mt-2 max-w-md leading-relaxed", onPrimary ? "text-white/90" : "text-muted-foreground")}>
+      <p
+        className={cn(
+          "mt-2 max-w-md leading-relaxed",
+          onPrimary ? "text-white/90" : "text-muted-foreground",
+        )}
+      >
         {text}
       </p>
 
@@ -62,7 +67,10 @@ const FeatureCard = ({
 export const Features = () => (
   <section id="features" className="scroll-mt-20 border-t py-20 sm:py-24">
     <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
-      <SectionHeading eyebrow="Built for visual thinking" title="Everything you need to turn ideas into action.">
+      <SectionHeading
+        eyebrow="Built for visual thinking"
+        title="Everything you need to turn ideas into action."
+      >
         <p className="max-w-xl">
           From the first rough sketch to a structured plan, Synkorum gives your team the tools to
           think visually.

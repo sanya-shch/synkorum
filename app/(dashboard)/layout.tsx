@@ -22,7 +22,10 @@ const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
   const user = await requireAuth();
   const organization = await getActiveOrganization();
   const memberships = await getMyOrganizationsWithRole();
-  const organizations = memberships.map((m) => ({ id: m.organization.id, name: m.organization.name }));
+  const organizations = memberships.map((m) => ({
+    id: m.organization.id,
+    name: m.organization.name,
+  }));
 
   const userInfo = { name: user.name, email: user.email, image: user.image };
 

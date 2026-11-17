@@ -21,9 +21,19 @@ export const MobileNav = ({ organizationId }: { organizationId: string }) => {
   });
 
   const tabs = [
-    { label: "Overview", icon: LayoutDashboard, href: dashboardHref("overview"), active: view === "overview" || view === "search" },
+    {
+      label: "Overview",
+      icon: LayoutDashboard,
+      href: dashboardHref("overview"),
+      active: view === "overview" || view === "search",
+    },
     { label: "Boards", icon: LayoutGrid, href: dashboardHref("all"), active: view === "all" },
-    { label: "Favorites", icon: Star, href: dashboardHref("favorites"), active: view === "favorites" },
+    {
+      label: "Favorites",
+      icon: Star,
+      href: dashboardHref("favorites"),
+      active: view === "favorites",
+    },
   ];
 
   return (
