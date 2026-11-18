@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/current-user";
 import { requireOrgAdmin, requireOrgMember, assertNotLastAdmin } from "@/lib/permissions";
 import { toActionResult } from "@/lib/action-result";
+import { AppError } from "@/lib/errors";
 import { CreateOrganizationSchema, UpdateOrganizationSchema } from "@/schemas";
 
 function slugify(input: string) {
@@ -36,31 +37,35 @@ export const getOrganizationBySlug = async (slug: string) => {
 };
 
 // for organization-settings-modal.tsx - fetch by id, not by slug
-export const getOrganizationById = async (organizationId: string) => {
-  const membership = await requireOrgMember(organizationId);
+export const getOrganizationById = async (organizationId: string) =>
+  toActionResult(async () => {
+    const membership = await requireOrgMember(organizationId);
 
-  const organization = await db.organization.findUnique({ where: { id: organizationId } });
-  if (!organization) return null;
+    const organization = await db.organization.findUnique({ where: { id: organizationId } });
+    if (!organization) throw new AppError("Team not found", 404);
 
-  return { organization, role: membership.role };
-};
-
-// list of org members for invite-button.tsx (must be at least MEMBER)
-export const getOrganizationMembers = async (organizationId: string) => {
-  await requireOrgMember(organizationId);
-
-  const memberships = await db.membership.findMany({
-    where: { organizationId },
-    include: { user: { select: { id: true, name: true, email: true, image: true } } },
-    orderBy: { createdAt: "asc" },
+    return { organization, role: membership.role };
   });
 
-  return memberships.map((m) => ({
-    userId: m.userId,
-    role: m.role,
-    user: { name: m.user.name, email: m.user.email },
-  }));
-};
+// list of org members for the members modal (must be at least MEMBER)
+export const getOrganizationMembers = async (organizationId: string) =>
+  toActionResult(async () => {
+    await requireOrgMember(organizationId);
+
+    const memberships = await db.membership.findMany({
+      where: { organizationId },
+      include: { user: { select: { id: true, name: true, email: true, image: true } } },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const members = memberships.map((m) => ({
+      userId: m.userId,
+      role: m.role,
+      user: { name: m.user.name, email: m.user.email },
+    }));
+
+    return { members };
+  });
 
 // create an ADDITIONAL organization (in addition to the default one, which already exists after registration)
 export const createOrganization = async (values: z.infer<typeof CreateOrganizationSchema>) =>
@@ -107,11 +112,17 @@ export const removeMember = async (organizationId: string, targetUserId: string)
       return { error: "To leave the team, use the 'Leave Team' option." };
     }
 
-    await assertNotLastAdmin(organizationId, targetUserId);
-
-    await db.membership.delete({
-      where: { userId_organizationId: { userId: targetUserId, organizationId } },
-    });
+    // The last-admin check and the delete run in one serializable transaction, so two
+    // concurrent requests can't both pass the check and leave the team without an admin.
+    await db.$transaction(
+      async (tx) => {
+        await assertNotLastAdmin(organizationId, targetUserId, tx);
+        await tx.membership.delete({
+          where: { userId_organizationId: { userId: targetUserId, organizationId } },
+        });
+      },
+      { isolationLevel: "Serializable" },
+    );
 
     return { success: "Member removed" };
   });
@@ -124,14 +135,17 @@ export const changeMemberRole = async (
   toActionResult(async () => {
     await requireOrgAdmin(organizationId);
 
-    if (role === "MEMBER") {
-      await assertNotLastAdmin(organizationId, targetUserId);
-    }
+    await db.$transaction(
+      async (tx) => {
+        if (role === "MEMBER") await assertNotLastAdmin(organizationId, targetUserId, tx);
 
-    await db.membership.update({
-      where: { userId_organizationId: { userId: targetUserId, organizationId } },
-      data: { role },
-    });
+        await tx.membership.update({
+          where: { userId_organizationId: { userId: targetUserId, organizationId } },
+          data: { role },
+        });
+      },
+      { isolationLevel: "Serializable" },
+    );
 
     return { success: "Role changed" };
   });
@@ -140,11 +154,15 @@ export const leaveOrganization = async (organizationId: string) =>
   toActionResult(async () => {
     const user = await requireUser();
     await requireOrgMember(organizationId);
-    await assertNotLastAdmin(organizationId, user.id);
-
-    await db.membership.delete({
-      where: { userId_organizationId: { userId: user.id, organizationId } },
-    });
+    await db.$transaction(
+      async (tx) => {
+        await assertNotLastAdmin(organizationId, user.id, tx);
+        await tx.membership.delete({
+          where: { userId_organizationId: { userId: user.id, organizationId } },
+        });
+      },
+      { isolationLevel: "Serializable" },
+    );
 
     return { success: "You left the team" };
   });

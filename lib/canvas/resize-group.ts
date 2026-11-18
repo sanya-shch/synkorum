@@ -1,5 +1,5 @@
 import { XYWH } from "@/types/canvas";
-import type { LayerBounds } from "@/lib/alignment";
+import type { LayerBounds } from "@/lib/canvas/alignment";
 
 // Scales every layer in `initialLayerBounds` by whatever factor `initialGroupBounds`
 // changed into `newGroupBounds`, keeping each layer's position and size relative to

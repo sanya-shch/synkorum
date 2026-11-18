@@ -58,5 +58,4 @@ export const CreateBoardShareLinkSchema = z.object({
 export const CreateBoardSchema = z.object({
   organizationId: z.string(),
   title: z.string().min(1).max(60),
-  imageUrl: z.string().min(1),
 });

@@ -4,7 +4,7 @@ import { Minus, Plus } from "lucide-react";
 
 import { Hint } from "@/components/hint";
 import { Button } from "@/components/ui/button";
-import { MIN_ZOOM, MAX_ZOOM } from "@/lib/utils";
+import { MIN_ZOOM, MAX_ZOOM } from "@/lib/canvas/camera";
 
 interface ZoomControlsProps {
   zoom: number;

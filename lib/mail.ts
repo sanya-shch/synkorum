@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { escapeHtml } from "@/lib/layer-text";
+import { logError } from "@/lib/logger";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -20,11 +21,9 @@ async function send(to: string, subject: string, html: string) {
   });
 
   if (error) {
-    console.error("[mail] error:", error);
+    logError("mail", error);
     throw new Error(error.message);
   }
-
-  console.log("[mail] Email sent:", data);
 
   return data;
 }

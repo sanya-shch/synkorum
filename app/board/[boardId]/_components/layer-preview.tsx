@@ -4,7 +4,7 @@ import { memo } from "react";
 
 import { LayerType } from "@/types/canvas";
 import { useStorage } from "@liveblocks/react";
-import { colorToCss } from "@/lib/utils";
+import { colorToCss } from "@/lib/canvas/color";
 
 import { Rectangle } from "./rectangle";
 import { Ellipse } from "./ellipse";

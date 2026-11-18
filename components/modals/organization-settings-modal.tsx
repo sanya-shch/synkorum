@@ -15,6 +15,7 @@ import {
 } from "@/actions/organization";
 import { useOrganizationSettingsModal } from "@/store/use-organization-settings-modal";
 import { cn } from "@/lib/utils";
+import { isActionError } from "@/lib/action-result";
 
 export const OrganizationSettingsModal = () => {
   const router = useRouter();
@@ -23,25 +24,32 @@ export const OrganizationSettingsModal = () => {
   const [name, setName] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loadedId, setLoadedId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!isOpen || !organizationId) return;
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoading(true);
-    setError(null);
+    let cancelled = false;
 
-    getOrganizationById(organizationId)
-      .then((data) => {
-        if (data) {
-          setName(data.organization.name);
-          setIsAdmin(data.role === "ADMIN");
-        }
-      })
-      .finally(() => setIsLoading(false));
+    getOrganizationById(organizationId).then((result) => {
+      if (cancelled) return;
+
+      if (isActionError(result)) {
+        setError(result.error);
+      } else {
+        setName(result.organization.name);
+        setIsAdmin(result.role === "ADMIN");
+      }
+      setLoadedId(organizationId);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, organizationId]);
+
+  const isLoading = loadedId !== organizationId;
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -56,7 +64,7 @@ export const OrganizationSettingsModal = () => {
 
     startTransition(async () => {
       const result = await updateOrganization({ organizationId, name });
-      if (result?.error) setError(result.error);
+      if (isActionError(result)) setError(result.error);
       else router.refresh();
     });
   };
@@ -66,7 +74,7 @@ export const OrganizationSettingsModal = () => {
 
     startTransition(async () => {
       const result = await leaveOrganization(organizationId);
-      if ("error" in result) {
+      if (isActionError(result)) {
         setError(result.error);
         return;
       }
@@ -81,7 +89,7 @@ export const OrganizationSettingsModal = () => {
 
     startTransition(async () => {
       const result = await deleteOrganization(organizationId);
-      if ("error" in result) {
+      if (isActionError(result)) {
         setError(result.error);
         return;
       }

@@ -3,7 +3,7 @@
 import * as z from "zod";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/current-user";
-import { requireOrgAdmin, requireOrgMember } from "@/lib/permissions";
+import { requireBoardMember, requireOrgAdmin, requireOrgMember } from "@/lib/permissions";
 import { toActionResult } from "@/lib/action-result";
 import { InviteMemberSchema, CreateBoardShareLinkSchema } from "@/schemas";
 import { generateOrgInviteToken, generateBoardShareToken } from "@/lib/tokens";
@@ -93,10 +93,7 @@ export const createBoardShareLink = async (values: z.infer<typeof CreateBoardSha
 
     const { boardId, expiresInDays, canEdit } = validated.data;
 
-    const board = await db.board.findUnique({ where: { id: boardId } });
-    if (!board) return { error: "Board not found" };
-
-    await requireOrgMember(board.organizationId);
+    await requireBoardMember(boardId);
 
     const link = await generateBoardShareToken({ boardId, expiresInDays, canEdit });
 
@@ -106,10 +103,7 @@ export const createBoardShareLink = async (values: z.infer<typeof CreateBoardSha
 
 export const revokeBoardShareLink = async (boardId: string, linkId: string) =>
   toActionResult(async () => {
-    const board = await db.board.findUnique({ where: { id: boardId } });
-    if (!board) return { error: "Board not found" };
-
-    await requireOrgMember(board.organizationId);
+    await requireBoardMember(boardId);
 
     // Scope the update to this board: the caller was only authorized for `boardId`,
     // so a linkId belonging to a different board must not be touched.

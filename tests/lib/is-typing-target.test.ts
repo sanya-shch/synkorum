@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isTypingTarget } from "@/lib/utils";
+import { isTypingTarget } from "@/lib/canvas/input";
 
 describe("isTypingTarget", () => {
   it("is true for an <input>", () => {

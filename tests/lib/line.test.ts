@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { getLineEndpoints, moveLineEndpoint, getArrowheadPoints, type LineBox } from "@/lib/line";
+import {
+  getLineEndpoints,
+  moveLineEndpoint,
+  getArrowheadPoints,
+  type LineBox,
+} from "@/lib/canvas/line";
 
 describe("getLineEndpoints", () => {
   it("top-left to bottom-right when flipX/flipY are both false", () => {

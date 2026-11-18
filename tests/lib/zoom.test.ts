@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { zoomAroundPoint, MIN_ZOOM, MAX_ZOOM } from "@/lib/utils";
+import { zoomAroundPoint, MIN_ZOOM, MAX_ZOOM } from "@/lib/canvas/camera";
 import type { Camera } from "@/types/canvas";
 
 const identity: Camera = { x: 0, y: 0, zoom: 1 };
@@ -53,7 +53,7 @@ describe("zoomAroundPoint", () => {
 
 describe("pointerEventToCanvasPoint (zoom-aware)", () => {
   it("accounts for zoom when converting a screen point to a world point", async () => {
-    const { pointerEventToCanvasPoint } = await import("@/lib/utils");
+    const { pointerEventToCanvasPoint } = await import("@/lib/canvas/camera");
     const camera: Camera = { x: 100, y: 50, zoom: 2 };
     const point = pointerEventToCanvasPoint(
       { clientX: 300, clientY: 250 } as unknown as React.PointerEvent,

@@ -64,10 +64,7 @@ describe("POST /api/auth/forgot-password", () => {
     sendPasswordResetEmailMock.mockRejectedValue(new Error("smtp down"));
 
     expect((await forgot({ email: "a@a.com" })).status).toBe(200);
-    expect(logSpy).toHaveBeenCalledWith(
-      "[forgot-password] failed to send reset email:",
-      expect.any(Error),
-    );
+    expect(logSpy).toHaveBeenCalledWith("[forgot-password]", expect.any(Error));
     logSpy.mockRestore();
   });
 

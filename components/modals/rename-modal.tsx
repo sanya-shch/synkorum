@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEventHandler, useEffect, useState, useTransition } from "react";
+import { FormEventHandler, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -17,29 +17,21 @@ import { useRenameModal } from "@/store/use-rename-modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { updateBoardTitle } from "@/actions/board";
+import { isActionError } from "@/lib/action-result";
 
-export const RenameModal = () => {
+const RenameForm = ({ id, initialTitle }: { id: string; initialTitle: string }) => {
   const router = useRouter();
+  const { onClose } = useRenameModal();
   const [pending, startTransition] = useTransition();
-
-  const { isOpen, onClose, initialValues } = useRenameModal();
-
-  const [title, setTitle] = useState(initialValues.title);
-
-  useEffect(() => {
-    if (initialValues?.title) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTitle(initialValues.title);
-    }
-  }, [initialValues?.title]);
+  const [title, setTitle] = useState(initialTitle);
 
   const onSubmit: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
 
     startTransition(async () => {
-      const result = await updateBoardTitle(initialValues.id, title);
+      const result = await updateBoardTitle(id, title);
 
-      if (result?.error) {
+      if (isActionError(result)) {
         toast.error(result.error);
         return;
       }
@@ -52,6 +44,37 @@ export const RenameModal = () => {
   };
 
   return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <Input
+        disabled={pending}
+        required
+        maxLength={60}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Board title"
+      />
+
+      <DialogFooter>
+        <DialogClose
+          render={
+            <Button type="button" variant="outline">
+              Cancel
+            </Button>
+          }
+        />
+
+        <Button disabled={pending} type="submit">
+          Save
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+};
+
+export const RenameModal = () => {
+  const { isOpen, onClose, initialValues } = useRenameModal();
+
+  return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
@@ -60,30 +83,12 @@ export const RenameModal = () => {
 
         <DialogDescription>Enter a new title for this board</DialogDescription>
 
-        <form onSubmit={onSubmit} className="space-y-4">
-          <Input
-            disabled={pending}
-            required
-            maxLength={60}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Board title"
-          />
-
-          <DialogFooter>
-            <DialogClose
-              render={
-                <Button type="button" variant="outline">
-                  Cancel
-                </Button>
-              }
-            />
-
-            <Button disabled={pending} type="submit">
-              Save
-            </Button>
-          </DialogFooter>
-        </form>
+        {/* key: a different board starts from its own title, no effect needed to sync it */}
+        <RenameForm
+          key={initialValues.id}
+          id={initialValues.id}
+          initialTitle={initialValues.title}
+        />
       </DialogContent>
     </Dialog>
   );

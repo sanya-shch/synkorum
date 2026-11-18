@@ -3,7 +3,8 @@ import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
 
 import { NoteLayer } from "@/types/canvas";
 import { toEditableHtml, toPlainText } from "@/lib/layer-text";
-import { cn, colorToCss, getContrastingTextColor } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { colorToCss, getContrastingTextColor } from "@/lib/canvas/color";
 import { useMutation } from "@liveblocks/react";
 import { LiveObject } from "@liveblocks/client";
 

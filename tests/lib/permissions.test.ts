@@ -6,6 +6,7 @@ import {
   requireOrgMember,
   requireOrgAdmin,
   assertNotLastAdmin,
+  requireBoardMember,
 } from "@/lib/permissions";
 
 const USER_ID = "user_1";
@@ -104,6 +105,32 @@ describe("assertNotLastAdmin", () => {
 
     await expect(assertNotLastAdmin(ORG_ID, USER_ID)).rejects.toThrow(
       "You can't leave a team without any admin",
+    );
+  });
+});
+
+describe("requireBoardMember", () => {
+  it("returns the board when the caller belongs to its organization", async () => {
+    const board = { id: "b1", organizationId: ORG_ID };
+    prismaMock.board.findUnique.mockResolvedValue(board as never);
+    prismaMock.membership.findUnique.mockResolvedValue(membership());
+
+    await expect(requireBoardMember("b1")).resolves.toBe(board);
+  });
+
+  it("throws 'Board not found' for an unknown board without checking membership", async () => {
+    prismaMock.board.findUnique.mockResolvedValue(null);
+
+    await expect(requireBoardMember("missing")).rejects.toThrow("Board not found");
+    expect(prismaMock.membership.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("rejects a caller outside the board's organization", async () => {
+    prismaMock.board.findUnique.mockResolvedValue({ id: "b1", organizationId: ORG_ID } as never);
+    prismaMock.membership.findUnique.mockResolvedValue(null);
+
+    await expect(requireBoardMember("b1")).rejects.toThrow(
+      "You are not a member of this organization",
     );
   });
 });

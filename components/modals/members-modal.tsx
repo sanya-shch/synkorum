@@ -16,6 +16,7 @@ import {
 import { inviteMemberByEmail } from "@/actions/invite";
 import { getOrganizationMembers, removeMember, changeMemberRole } from "@/actions/organization";
 import { useMembersModal } from "@/store/use-members-modal";
+import { isActionError } from "@/lib/action-result";
 
 interface Member {
   userId: string;
@@ -36,15 +37,15 @@ export const MembersModal = () => {
 
   const loadMembers = (orgId: string) => {
     startTransition(async () => {
-      const data = await getOrganizationMembers(orgId);
-      setMembers(data);
+      const result = await getOrganizationMembers(orgId);
+
+      if (isActionError(result)) setMessage({ type: "error", text: result.error });
+      else setMembers(result.members);
     });
   };
 
   useEffect(() => {
     if (!isOpen || !organizationId) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMessage(null);
     loadMembers(organizationId);
   }, [isOpen, organizationId]);
 
@@ -61,9 +62,10 @@ export const MembersModal = () => {
     setMessage(null);
     startTransition(async () => {
       const result = await inviteMemberByEmail({ organizationId, email, role });
-      if ("error" in result) setMessage({ type: "error", text: result.error! });
-      if ("success" in result) {
-        setMessage({ type: "success", text: result.success! });
+      if (isActionError(result)) {
+        setMessage({ type: "error", text: result.error });
+      } else {
+        setMessage({ type: "success", text: result.success });
         setEmail("");
       }
     });
@@ -74,7 +76,7 @@ export const MembersModal = () => {
     startTransition(async () => {
       const result = await removeMember(organizationId, userId);
 
-      if (result?.error) setMessage({ type: "error", text: result.error });
+      if (isActionError(result)) setMessage({ type: "error", text: result.error });
       else loadMembers(organizationId);
     });
   };
@@ -84,7 +86,7 @@ export const MembersModal = () => {
     startTransition(async () => {
       const result = await changeMemberRole(organizationId, userId, newRole);
 
-      if ("error" in result) setMessage({ type: "error", text: result.error });
+      if (isActionError(result)) setMessage({ type: "error", text: result.error });
       else loadMembers(organizationId);
     });
   };

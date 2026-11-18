@@ -1,5 +1,5 @@
 import { RectangleLayer } from "@/types/canvas";
-import { colorToCss } from "@/lib/utils";
+import { colorToCss } from "@/lib/canvas/color";
 
 interface RectangleProps {
   id: string;

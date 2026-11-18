@@ -1,3 +1,4 @@
+import { logError } from "@/lib/logger";
 import { Liveblocks } from "@liveblocks/node";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
     // became Next's default HTML error page, which the client-side Liveblocks SDK
     // then failed to JSON-parse - hiding the real cause behind a useless
     // "Unexpected token '<'" message. Log and return a real error instead.
-    console.error("[liveblocks-auth]", err);
+    logError("liveblocks-auth", err);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

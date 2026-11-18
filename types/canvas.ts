@@ -10,18 +10,21 @@ export type Camera = {
   zoom: number;
 };
 
+// These numbers are persisted inside Liveblocks storage, so they are part of the data
+// format: never renumber or reorder. A new layer type gets the next free number.
 export enum LayerType {
-  Rectangle,
-  Ellipse,
-  Path,
-  Text,
-  Note,
-  Diamond,
-  Line,
+  Rectangle = 0,
+  Ellipse = 1,
+  Path = 2,
+  Text = 3,
+  Note = 4,
+  Diamond = 5,
+  Line = 6,
 }
 
-export type RectangleLayer = {
-  type: LayerType.Rectangle;
+// Every layer is placed by a bounding box and has a fill; most also carry text.
+type BoxLayer<T extends LayerType> = {
+  type: T;
   x: number;
   y: number;
   height: number;
@@ -30,56 +33,19 @@ export type RectangleLayer = {
   value?: string;
 };
 
-export type EllipseLayer = {
-  type: LayerType.Ellipse;
-  x: number;
-  y: number;
-  height: number;
-  width: number;
-  fill: Color;
-  value?: string;
-};
+export type RectangleLayer = BoxLayer<LayerType.Rectangle>;
 
-export type PathLayer = {
-  type: LayerType.Path;
-  x: number;
-  y: number;
-  height: number;
-  width: number;
-  fill: Color;
+export type EllipseLayer = BoxLayer<LayerType.Ellipse>;
+
+export type PathLayer = BoxLayer<LayerType.Path> & {
   points: number[][];
-  value?: string;
 };
 
-export type TextLayer = {
-  type: LayerType.Text;
-  x: number;
-  y: number;
-  height: number;
-  width: number;
-  fill: Color;
-  value?: string;
-};
+export type TextLayer = BoxLayer<LayerType.Text>;
 
-export type NoteLayer = {
-  type: LayerType.Note;
-  x: number;
-  y: number;
-  height: number;
-  width: number;
-  fill: Color;
-  value?: string;
-};
+export type NoteLayer = BoxLayer<LayerType.Note>;
 
-export type DiamondLayer = {
-  type: LayerType.Diamond;
-  x: number;
-  y: number;
-  height: number;
-  width: number;
-  fill: Color;
-  value?: string;
-};
+export type DiamondLayer = BoxLayer<LayerType.Diamond>;
 
 // x/y/width/height are always a normalized, non-negative bounding box (same
 // convention as every other layer) so translate/duplicate/nudge/align/group-resize

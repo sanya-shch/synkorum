@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { createOrganization } from "@/actions/organization";
 import { useCreateOrganizationModal } from "@/store/use-create-organization-modal";
 import { cn } from "@/lib/utils";
+import { isActionError } from "@/lib/action-result";
 
 export const CreateOrganizationModal = () => {
   const router = useRouter();
@@ -32,7 +33,7 @@ export const CreateOrganizationModal = () => {
     startTransition(async () => {
       const result = await createOrganization({ name });
 
-      if (result?.error) {
+      if (isActionError(result)) {
         setError(result.error);
         return;
       }
@@ -42,7 +43,7 @@ export const CreateOrganizationModal = () => {
         await fetch("/api/organizations/switch", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ organizationId: result.organization!.id }),
+          body: JSON.stringify({ organizationId: result.organization.id }),
         });
 
         setName("");

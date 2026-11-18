@@ -1,4 +1,4 @@
-import { colorToCss } from "@/lib/utils";
+import { colorToCss } from "@/lib/canvas/color";
 import { EllipseLayer } from "@/types/canvas";
 
 interface EllipseProps {

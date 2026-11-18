@@ -1,5 +1,5 @@
-import { colorToCss } from "@/lib/utils";
-import { getArrowheadPoints } from "@/lib/line";
+import { colorToCss } from "@/lib/canvas/color";
+import { getArrowheadPoints } from "@/lib/canvas/line";
 import { LineLayer } from "@/types/canvas";
 
 interface LineProps {

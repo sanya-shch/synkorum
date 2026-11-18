@@ -17,6 +17,7 @@ import { useRenameModal } from "@/store/use-rename-modal";
 import { deleteBoard } from "@/actions/board";
 import { Button } from "@/components/ui/button";
 import { useBoardLinks } from "@/hooks/use-board-links";
+import { isActionError } from "@/lib/action-result";
 
 interface ActionsProps {
   children: React.ReactElement;
@@ -37,7 +38,7 @@ export const Actions = ({ children, side, sideOffset, id, title }: ActionsProps)
     startTransition(async () => {
       const result = await deleteBoard(id);
 
-      if (result?.error) {
+      if (isActionError(result)) {
         toast.error(result.error);
         return;
       }

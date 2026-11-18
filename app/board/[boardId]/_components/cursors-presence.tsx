@@ -4,7 +4,7 @@ import { memo } from "react";
 
 import { useOthersConnectionIds, useOthersMapped } from "@liveblocks/react";
 import { shallow } from "@liveblocks/client";
-import { colorToCss } from "@/lib/utils";
+import { colorToCss } from "@/lib/canvas/color";
 
 import { Cursor } from "./cursor";
 import { Path } from "./path";

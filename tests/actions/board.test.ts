@@ -18,7 +18,6 @@ describe("createBoard", () => {
     const result = await createBoard({
       organizationId: ORG_ID,
       title: "New board",
-      imageUrl: "https://example.com/x.svg",
     });
 
     expect(result).toEqual({ error: "You are not a member of this organization" });
@@ -29,7 +28,6 @@ describe("createBoard", () => {
     const result = await createBoard({
       organizationId: ORG_ID,
       title: "",
-      imageUrl: "not-a-url",
     });
 
     expect(result).toEqual({ error: "Incorrect data" });
@@ -85,14 +83,16 @@ describe("toggleFavorite", () => {
       role: "MEMBER",
       createdAt: new Date(),
     });
-    prismaMock.boardFavorite.findUnique.mockResolvedValue(null);
-    prismaMock.boardFavorite.create.mockResolvedValue({} as any);
+    prismaMock.boardFavorite.deleteMany.mockResolvedValue({ count: 0 });
+    prismaMock.boardFavorite.upsert.mockResolvedValue({} as any);
 
     const result = await toggleFavorite(BOARD_ID);
 
     expect(result).toMatchObject({ favorited: true });
-    expect(prismaMock.boardFavorite.create).toHaveBeenCalledWith({
-      data: { userId: USER_ID, boardId: BOARD_ID },
+    expect(prismaMock.boardFavorite.upsert).toHaveBeenCalledWith({
+      where: { userId_boardId: { userId: USER_ID, boardId: BOARD_ID } },
+      create: { userId: USER_ID, boardId: BOARD_ID },
+      update: {},
     });
   });
 
@@ -105,13 +105,15 @@ describe("toggleFavorite", () => {
       role: "MEMBER",
       createdAt: new Date(),
     });
-    prismaMock.boardFavorite.findUnique.mockResolvedValue({ id: "fav_1" } as any);
-    prismaMock.boardFavorite.delete.mockResolvedValue({} as any);
+    prismaMock.boardFavorite.deleteMany.mockResolvedValue({ count: 1 });
 
     const result = await toggleFavorite(BOARD_ID);
 
     expect(result).toMatchObject({ favorited: false });
-    expect(prismaMock.boardFavorite.delete).toHaveBeenCalledWith({ where: { id: "fav_1" } });
+    expect(prismaMock.boardFavorite.deleteMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID, boardId: BOARD_ID },
+    });
+    expect(prismaMock.boardFavorite.upsert).not.toHaveBeenCalled();
   });
 
   it("rejects a non-member trying to favorite a board", async () => {
@@ -121,6 +123,6 @@ describe("toggleFavorite", () => {
     const result = await toggleFavorite(BOARD_ID);
 
     expect(result).toEqual({ error: "You are not a member of this organization" });
-    expect(prismaMock.boardFavorite.create).not.toHaveBeenCalled();
+    expect(prismaMock.boardFavorite.upsert).not.toHaveBeenCalled();
   });
 });

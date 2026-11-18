@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { verifySessionToken } from "@/lib/jwt";
@@ -8,7 +9,10 @@ import { AppError } from "./errors";
 // Returns the user from the active session, or null. Intentionally rereads the user
 // from the DB (and does not trust only the JWT payload) - so the email/name in the UI
 // is always fresh, and banning/deleting the account immediately "turns off" the session.
-export async function getCurrentUser() {
+//
+// Wrapped in React's cache(): a single request calls this from the layout, the page and
+// several server actions, and they now share one lookup instead of hitting the DB each time.
+export const getCurrentUser = cache(async () => {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -21,7 +25,7 @@ export async function getCurrentUser() {
   if (isSessionRevoked(payload.issuedAt, user.passwordChangedAt)) return null;
 
   return user;
-}
+});
 // For Server Components / Server Actions - throws if the user is not logged in.
 // Catch this error and show the fallback UI - the caller's responsibility, or let it go (Next will show the error boundary).
 export async function requireAuth() {

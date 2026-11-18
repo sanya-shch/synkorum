@@ -52,7 +52,6 @@ export async function seedBoardWithEditableShareLink() {
   const board = await db.board.create({
     data: {
       title: "E2E Board",
-      imageUrl: "https://example.com/e2e-placeholder.svg", // only used for dashboard thumbnails
       organizationId: organization.id,
       authorId: user.id,
       authorName: user.name,

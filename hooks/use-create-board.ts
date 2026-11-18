@@ -4,10 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { createBoard } from "@/actions/board";
-
-// Boards no longer rely on a stored preview image (the dashboard draws a placeholder),
-// but the column is still required by the schema.
-const PLACEHOLDER_IMAGE = "file.svg";
+import { isActionError } from "@/lib/action-result";
 
 export const useCreateBoard = (organizationId: string) => {
   const router = useRouter();
@@ -15,14 +12,10 @@ export const useCreateBoard = (organizationId: string) => {
 
   const create = () => {
     startTransition(async () => {
-      const result = await createBoard({
-        organizationId,
-        title: "Untitled",
-        imageUrl: PLACEHOLDER_IMAGE,
-      });
+      const result = await createBoard({ organizationId, title: "Untitled" });
 
-      if ("board" in result) {
-        router.push(`/board/${result.board!.id}`);
+      if (!isActionError(result)) {
+        router.push(`/board/${result.board.id}`);
       }
     });
   };

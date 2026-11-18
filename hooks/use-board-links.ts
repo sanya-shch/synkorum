@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 
 import { createBoardShareLink } from "@/actions/invite";
+import { isActionError } from "@/lib/action-result";
 
 // Copy-link actions shared by the board card menu, the board header menu and the Share menu.
 export const useBoardLinks = (boardId: string) => {
@@ -20,8 +21,8 @@ export const useBoardLinks = (boardId: string) => {
     startTransition(async () => {
       const result = await createBoardShareLink({ boardId, canEdit });
 
-      if ("error" in result || !("shareUrl" in result)) {
-        toast.error(result?.error ?? "Failed to create share link");
+      if (isActionError(result)) {
+        toast.error(result.error);
         return;
       }
 

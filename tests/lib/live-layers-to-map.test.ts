@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { LiveMap, LiveObject } from "@liveblocks/client";
-import { liveLayersToMap, findIntersectingLayersWithRectangle } from "@/lib/utils";
+import { liveLayersToMap, findIntersectingLayersWithRectangle } from "@/lib/canvas/layers";
 import { LayerType, type Layer } from "@/types/canvas";
 
 const rect = (x: number, y: number): Layer => ({

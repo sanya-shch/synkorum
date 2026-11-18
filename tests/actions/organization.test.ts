@@ -31,6 +31,10 @@ const memberMembership = {
 
 beforeEach(() => {
   currentUserMock.mockResolvedValue({ id: ADMIN_ID, email: "admin@a.com", name: "Admin" });
+  // The last-admin guard and the membership change run in one transaction; the mock simply
+  // hands the same client to the callback.
+  prismaMock.$transaction.mockImplementation((async (fn: (tx: unknown) => unknown) =>
+    fn(prismaMock)) as never);
 });
 
 describe("createOrganization", () => {
@@ -61,6 +65,20 @@ describe("createOrganization", () => {
         }),
       }),
     );
+  });
+});
+
+describe("last-admin guard runs atomically", () => {
+  it("removeMember uses a serializable transaction", async () => {
+    prismaMock.membership.findUnique.mockResolvedValue(adminMembership);
+    prismaMock.membership.count.mockResolvedValue(2);
+    prismaMock.membership.delete.mockResolvedValue(memberMembership);
+
+    await removeMember(ORG_ID, TARGET_ID);
+
+    expect(prismaMock.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+      isolationLevel: "Serializable",
+    });
   });
 });
 

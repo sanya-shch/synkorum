@@ -1,3 +1,4 @@
+import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/current-user";
 import { AppError } from "./errors";
@@ -22,15 +23,31 @@ export const requireOrgAdmin = async (organizationId: string) => {
   return membership;
 };
 
-export const assertNotLastAdmin = async (organizationId: string, userId: string) => {
-  const admins = await db.membership.count({
-    where: { organizationId, role: "ADMIN" },
-  });
-  const targetIsAdmin = await db.membership.findUnique({
-    where: { userId_organizationId: { userId, organizationId } },
-  });
+// Loads a board and checks the caller belongs to its organization. Every board action
+// starts with this, so the lookup and the error live in one place.
+export const requireBoardMember = async (boardId: string) => {
+  const board = await db.board.findUnique({ where: { id: boardId } });
+  if (!board) throw new AppError("Board not found", 404);
 
-  if (targetIsAdmin?.role === "ADMIN" && admins <= 1) {
+  await requireOrgMember(board.organizationId);
+  return board;
+};
+
+// Pass the transaction client when the check and the following membership change must be
+// atomic - otherwise two admins leaving at the same moment could both pass the check.
+export const assertNotLastAdmin = async (
+  organizationId: string,
+  userId: string,
+  client: Prisma.TransactionClient = db,
+) => {
+  const [admins, target] = await Promise.all([
+    client.membership.count({ where: { organizationId, role: "ADMIN" } }),
+    client.membership.findUnique({
+      where: { userId_organizationId: { userId, organizationId } },
+    }),
+  ]);
+
+  if (target?.role === "ADMIN" && admins <= 1) {
     throw new AppError("You can't leave a team without any admin", 400);
   }
 };

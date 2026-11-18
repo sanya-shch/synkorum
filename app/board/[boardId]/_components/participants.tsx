@@ -1,6 +1,6 @@
 "use client";
 
-import { connectionIdToColor } from "@/lib/utils";
+import { connectionIdToColor } from "@/lib/canvas/color";
 import { useOthers, useSelf, useStatus } from "@liveblocks/react";
 
 import { UserAvatar } from "./user-avatar";

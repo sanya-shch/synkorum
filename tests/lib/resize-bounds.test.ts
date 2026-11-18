@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resizeBounds } from "@/lib/utils";
+import { resizeBounds } from "@/lib/canvas/layers";
 import { Side } from "@/types/canvas";
 
 const square = { x: 100, y: 100, width: 100, height: 100 }; // corners: (100,100)-(200,200)

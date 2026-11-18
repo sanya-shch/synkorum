@@ -12,6 +12,13 @@
 
 The dashboard view is driven by the query string (`?view=all`, `?favorites=true`, `?search=`), resolved in one place: `lib/dashboard-view.ts`. Design tokens (the indigo palette, surfaces, radius) live in `app/globals.css`; the site metadata, robots, sitemap, manifest and social card are generated from `lib/site.ts`.
 
+## Server action conventions
+
+- Every mutation goes through `toActionResult` (`lib/action-result.ts`): expected failures are thrown as `AppError` and come back as `{ error }`, anything unexpected is logged through `lib/logger.ts` and returned as a generic message. Callers branch with `isActionError(result)`.
+- Anything a client component calls is wrapped the same way, including the read actions used by modals.
+- Authorization lives in `lib/permissions.ts` (`requireOrgMember`, `requireOrgAdmin`, `requireBoardMember`). Membership changes that must keep the "at least one admin" invariant run in a serializable transaction.
+- `getCurrentUser` is wrapped in React `cache()`, so layouts, pages and actions in one request share a single user lookup.
+
 ## Access model
 
 Every request is authorized in layers, so no single check is a single point of failure:

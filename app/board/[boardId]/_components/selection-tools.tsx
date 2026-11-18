@@ -32,7 +32,7 @@ import {
   distributeVertically,
   type LayerBounds,
   type PositionPatch,
-} from "@/lib/alignment";
+} from "@/lib/canvas/alignment";
 
 import { ColorPicker } from "./color-picker";
 

@@ -1,3 +1,4 @@
+import { logError } from "@/lib/logger";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { ResetSchema } from "@/schemas";
@@ -35,7 +36,8 @@ export async function POST(request: Request) {
     try {
       await sendPasswordResetEmail(resetToken.email, resetToken.token);
     } catch (err) {
-      console.error("[forgot-password] failed to send reset email:", err);
+      // The response stays generic (no account enumeration); only the log shows the failure.
+      logError("forgot-password", err);
     }
   }
 

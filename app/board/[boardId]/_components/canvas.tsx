@@ -13,20 +13,18 @@ import {
   useSelf,
 } from "@liveblocks/react";
 import { LiveObject } from "@liveblocks/client";
+import { connectionIdToColor, colorToCss } from "@/lib/canvas/color";
+import { pointerEventToCanvasPoint, zoomAroundPoint } from "@/lib/canvas/camera";
 import {
-  connectionIdToColor,
-  pointerEventToCanvasPoint,
   resizeBounds,
   findIntersectingLayersWithRectangle,
-  colorToCss,
   penPointsToPathLayer,
   liveLayersToMap,
-  isTypingTarget,
-  zoomAroundPoint,
-} from "@/lib/utils";
-import { nudge, type LayerBounds } from "@/lib/alignment";
-import { resizeGroup } from "@/lib/resize-group";
-import { moveLineEndpoint } from "@/lib/line";
+} from "@/lib/canvas/layers";
+import { isTypingTarget } from "@/lib/canvas/input";
+import { nudge, type LayerBounds } from "@/lib/canvas/alignment";
+import { resizeGroup } from "@/lib/canvas/resize-group";
+import { moveLineEndpoint } from "@/lib/canvas/line";
 import { MAX_LAYERS } from "@/lib/constants";
 import {
   Camera,

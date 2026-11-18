@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { resizeGroup } from "@/lib/resize-group";
-import type { LayerBounds } from "@/lib/alignment";
+import { resizeGroup } from "@/lib/canvas/resize-group";
+import type { LayerBounds } from "@/lib/canvas/alignment";
 
 describe("resizeGroup - single layer (reduces to a direct resize)", () => {
   it("resizes the one layer to exactly the new group bounds", () => {

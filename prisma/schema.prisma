@@ -99,7 +99,6 @@ model Invite {
 model Board {
   id             String   @id @default(cuid())
   title          String
-  imageUrl       String
   organizationId String
   authorId       String
   authorName     String
