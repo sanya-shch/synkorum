@@ -7,6 +7,7 @@ import { getActiveOrganization, getMyOrganizationsWithRole } from "@/lib/active-
 import { LogoMark } from "@/components/logo";
 
 import { DashboardSidebar } from "./_components/dashboard-sidebar";
+import { DemoBanner } from "./_components/demo-banner";
 import { MobileHeader } from "./_components/mobile-header";
 import { MobileNav } from "./_components/mobile-nav";
 import { Navbar } from "./_components/navbar";
@@ -57,6 +58,8 @@ const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-dvh lg:pl-64">
+      {user.isDemo && <DemoBanner createdAt={user.createdAt} />}
+
       <DashboardSidebar
         organizations={organizations}
         activeOrgId={organization.id}

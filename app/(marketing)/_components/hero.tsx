@@ -1,5 +1,7 @@
 import { Play } from "lucide-react";
 
+import { DemoButton } from "@/components/demo-button";
+
 import { HeroBoard } from "./mocks";
 import { PrimaryCta } from "./cta-link";
 
@@ -20,8 +22,9 @@ export const Hero = ({ isLoggedIn }: { isLoggedIn: boolean }) => (
         and collaborate in real time, all in one shared workspace.
       </p>
 
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <PrimaryCta isLoggedIn={isLoggedIn} />
+        {!isLoggedIn && <DemoButton />}
         <a
           href="#features"
           className="inline-flex h-12 items-center justify-center gap-x-2 rounded-xl border bg-card px-6 text-[15px] font-medium shadow-xs transition hover:bg-muted"
@@ -32,7 +35,8 @@ export const Hero = ({ isLoggedIn }: { isLoggedIn: boolean }) => (
       </div>
 
       <p className="mt-5 text-sm text-muted-foreground">
-        No complicated setup. Just open a board and start creating.
+        No complicated setup. Just open a board and start creating
+        {!isLoggedIn && " - or try the demo, no sign-up needed"}.
       </p>
     </div>
 

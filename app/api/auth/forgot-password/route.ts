@@ -30,7 +30,8 @@ export async function POST(request: Request) {
   const { email } = validated.data;
   const user = await db.user.findUnique({ where: { email } });
 
-  if (user) {
+  // Demo accounts have no real mailbox - never generate a token or send mail for them.
+  if (user && !user.isDemo) {
     const resetToken = await generatePasswordResetToken(email);
 
     try {

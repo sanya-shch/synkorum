@@ -6,6 +6,8 @@ import { requireUser } from "@/lib/current-user";
 import { requireOrgAdmin, requireOrgMember, assertNotLastAdmin } from "@/lib/permissions";
 import { toActionResult } from "@/lib/action-result";
 import { AppError } from "@/lib/errors";
+import { assertNotDemo } from "@/lib/demo";
+import { DEMO_MESSAGES } from "@/lib/demo-config";
 import { CreateOrganizationSchema, UpdateOrganizationSchema } from "@/schemas";
 
 function slugify(input: string) {
@@ -74,6 +76,8 @@ export const createOrganization = async (values: z.infer<typeof CreateOrganizati
     if (!validated.success) return { error: "Incorrect name" };
 
     const user = await requireUser();
+    assertNotDemo(user, DEMO_MESSAGES.organizations);
+
     const { name } = validated.data;
     const slug = `${slugify(name)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -169,6 +173,7 @@ export const leaveOrganization = async (organizationId: string) =>
 
 export const deleteOrganization = async (organizationId: string) =>
   toActionResult(async () => {
+    assertNotDemo(await requireUser(), DEMO_MESSAGES.deleteOrganization);
     await requireOrgAdmin(organizationId);
 
     await db.organization.delete({ where: { id: organizationId } });

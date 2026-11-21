@@ -9,6 +9,9 @@ import { InviteMemberSchema, CreateBoardShareLinkSchema } from "@/schemas";
 import { generateOrgInviteToken, generateBoardShareToken } from "@/lib/tokens";
 import { sendOrgInviteEmail } from "@/lib/mail";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { AppError } from "@/lib/errors";
+import { assertNotDemo } from "@/lib/demo";
+import { DEMO_LIMITS, DEMO_MESSAGES } from "@/lib/demo-config";
 
 export const inviteMemberByEmail = async (values: z.infer<typeof InviteMemberSchema>) =>
   toActionResult(async () => {
@@ -16,6 +19,9 @@ export const inviteMemberByEmail = async (values: z.infer<typeof InviteMemberSch
     if (!validated.success) return { error: "Incorrect data" };
 
     const { organizationId, email, role } = validated.data;
+    // Demo accounts can't send email at all: an invite goes to an arbitrary address from our
+    // sender, which would turn the demo into a spam cannon.
+    assertNotDemo(await requireUser(), DEMO_MESSAGES.invites);
     await requireOrgAdmin(organizationId);
 
     // Each invitation sends an email from our domain - don't let one account turn that
@@ -93,7 +99,18 @@ export const createBoardShareLink = async (values: z.infer<typeof CreateBoardSha
 
     const { boardId, expiresInDays, canEdit } = validated.data;
 
-    await requireBoardMember(boardId);
+    const board = await requireBoardMember(boardId);
+
+    if ((await requireUser()).isDemo) {
+      const activeLinks = await db.boardShareLink.count({
+        where: {
+          revoked: false,
+          board: { organizationId: board.organizationId },
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+      });
+      if (activeLinks >= DEMO_LIMITS.shareLinks) throw new AppError(DEMO_MESSAGES.shareLinks, 403);
+    }
 
     const link = await generateBoardShareToken({ boardId, expiresInDays, canEdit });
 

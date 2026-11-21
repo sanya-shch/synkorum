@@ -22,12 +22,17 @@ model User {
   hashedPassword String
   // Sessions issued before this moment are rejected (set on password reset).
   passwordChangedAt DateTime?
+  // Throwaway "Try demo" account: no real email, no password login, expires DEMO_TTL_HOURS
+  // after createdAt and is deleted by lib/demo.ts#purgeExpiredDemos.
+  isDemo Boolean @default(false)
 
   memberships Membership[]
   favorites   BoardFavorite[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([isDemo, createdAt])
 }
 
 model VerificationToken {

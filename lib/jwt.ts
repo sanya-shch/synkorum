@@ -15,11 +15,14 @@ export type VerifiedSession = SessionPayload & {
   issuedAt: number;
 };
 
-export async function signSessionToken(payload: SessionPayload): Promise<string> {
+export async function signSessionToken(
+  payload: SessionPayload,
+  expiresIn: string = "30d",
+): Promise<string> {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("30d")
+    .setExpirationTime(expiresIn)
     .sign(secret);
 }
 

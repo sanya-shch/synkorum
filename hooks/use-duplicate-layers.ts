@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import { useSelf, useMutation } from "@liveblocks/react";
 import { LiveObject } from "@liveblocks/client";
 import { MAX_LAYERS } from "@/lib/constants";
+import { notifyLayerLimit } from "@/lib/layer-limit";
 
 // Duplicates every selected layer with a small offset and selects the copies, so the
 // duplicate lands where you'd expect (Figma/Miro-style Ctrl/Cmd+D) and is ready to drag.
@@ -19,7 +20,10 @@ export const useDuplicateLayers = () => {
       const newIds: string[] = [];
 
       for (const id of selection ?? []) {
-        if (liveLayers.size >= MAX_LAYERS) break;
+        if (liveLayers.size >= MAX_LAYERS) {
+          notifyLayerLimit();
+          break;
+        }
 
         const layer = liveLayers.get(id);
         if (!layer) continue;

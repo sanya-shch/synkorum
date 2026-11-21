@@ -7,6 +7,10 @@ export const authRoutes: string[] = ["/login", "/register", "/reset", "/new-pass
 
 export const apiAuthPrefix = "/api/auth";
 
+// Scheduled jobs (vercel.json). They carry no session cookie and authenticate themselves
+// with CRON_SECRET inside the route, so the proxy must let them through.
+export const apiCronPrefix = "/api/cron";
+
 export const DASHBOARD_PATH = "/dashboard";
 
 export const DEFAULT_LOGIN_REDIRECT = DASHBOARD_PATH;

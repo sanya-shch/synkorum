@@ -41,7 +41,8 @@ export async function POST(request: Request) {
   }
 
   const user = await db.user.findUnique({ where: { email } });
-  if (!user) {
+  // Demo accounts have no password; treat them exactly like an unknown email.
+  if (!user || user.isDemo) {
     await burnPasswordCheck(password);
     return NextResponse.json({ error: "Incorrect email or password" }, { status: 401 });
   }

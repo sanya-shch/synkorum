@@ -59,6 +59,10 @@ describe("proxy - unauthenticated visitors", () => {
     },
   );
 
+  it("does not gate /api/cron/* (they authenticate with CRON_SECRET themselves)", async () => {
+    expect(passesThrough(await call("/api/cron/purge-demos"))).toBe(true);
+  });
+
   it("does not gate /api/auth/* (login, register, ...)", async () => {
     expect(passesThrough(await call("/api/auth/login"))).toBe(true);
   });

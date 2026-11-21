@@ -26,6 +26,7 @@ import { nudge, type LayerBounds } from "@/lib/canvas/alignment";
 import { resizeGroup } from "@/lib/canvas/resize-group";
 import { moveLineEndpoint } from "@/lib/canvas/line";
 import { MAX_LAYERS } from "@/lib/constants";
+import { notifyLayerLimit } from "@/lib/layer-limit";
 import {
   Camera,
   CanvasMode,
@@ -108,6 +109,7 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
 
       const liveLayers = storage.get("layers");
       if (liveLayers.size >= MAX_LAYERS) {
+        notifyLayerLimit();
         return;
       }
 
@@ -231,12 +233,13 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
     ({ storage, self, setMyPresence }) => {
       const { pencilDraft } = self.presence;
 
-      if (
-        !self.canWrite ||
-        pencilDraft == null ||
-        pencilDraft.length < 2 ||
-        storage.get("layers").size >= MAX_LAYERS
-      ) {
+      if (!self.canWrite || pencilDraft == null || pencilDraft.length < 2) {
+        setMyPresence({ pencilDraft: null });
+        return;
+      }
+
+      if (storage.get("layers").size >= MAX_LAYERS) {
+        notifyLayerLimit();
         setMyPresence({ pencilDraft: null });
         return;
       }

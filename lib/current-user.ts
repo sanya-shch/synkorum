@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { verifySessionToken } from "@/lib/jwt";
 import { isSessionRevoked } from "@/lib/session-validity";
+import { isDemoExpired } from "@/lib/demo-config";
 import { SESSION_COOKIE } from "@/lib/constants";
 import { AppError } from "./errors";
 
@@ -23,6 +24,9 @@ export const getCurrentUser = cache(async () => {
   const user = await db.user.findUnique({ where: { id: payload.userId } });
   if (!user || !user.emailVerified) return null;
   if (isSessionRevoked(payload.issuedAt, user.passwordChangedAt)) return null;
+  // A demo account stops working the moment its time is up, even before the cleanup job
+  // has actually deleted it.
+  if (isDemoExpired(user)) return null;
 
   return user;
 });

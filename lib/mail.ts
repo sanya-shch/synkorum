@@ -1,31 +1,51 @@
-import { Resend } from "resend";
 import { escapeHtml } from "@/lib/layer-text";
 import { logError } from "@/lib/logger";
+import { isDemoEmail } from "@/lib/demo-config";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Transactional email through Brevo's HTTP API (https://developers.brevo.com/reference/sendtransacemail).
+// Plain fetch on purpose: one endpoint, no SDK dependency to ship to a serverless function.
+
+const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-// В деві без верифікованого домену Resend дозволяє слати листи тільки на
-// свою ж email-адресу, з якої зареєстровано акаунт Resend, з відправника
-// "onboarding@resend.dev". Для продакшену - додайте і верифікуйте свій
-// домен в Resend, і поставте EMAIL_FROM="Board <noreply@ваш-домен.com>".
-const FROM = process.env.EMAIL_FROM || "Board <onboarding@resend.dev>";
+// EMAIL_FROM is "Synkorum <noreply@your-domain.com>" or a bare address. Brevo only sends
+// from a sender you have verified in its dashboard (Senders, Domains & Dedicated IPs).
+function parseSender(raw: string | undefined) {
+  const value = raw?.trim();
+  if (!value) return null;
+
+  const match = value.match(/^(.*?)\s*<([^<>\s]+)>$/);
+  if (match) return { name: match[1].replace(/^"|"$/g, "") || undefined, email: match[2] };
+  return { email: value };
+}
 
 async function send(to: string, subject: string, html: string) {
-  const { data, error } = await resend.emails.send({
-    from: FROM,
-    to,
-    subject,
-    html,
-  });
+  // Demo accounts have no mailbox (see lib/demo-config.ts). Nothing should ever try to mail
+  // them, but if some path does, dropping it beats a bounce and a wasted quota slot.
+  if (isDemoEmail(to)) return;
 
-  if (error) {
-    logError("mail", error);
-    throw new Error(error.message);
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) throw new Error("BREVO_API_KEY is not set");
+
+  const sender = parseSender(process.env.EMAIL_FROM);
+  if (!sender) {
+    throw new Error('EMAIL_FROM is not set (expected e.g. "Synkorum <noreply@your-domain.com>")');
   }
 
-  return data;
+  const response = await fetch(BREVO_ENDPOINT, {
+    method: "POST",
+    headers: { "api-key": apiKey, "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({ sender, to: [{ email: to }], subject, htmlContent: html }),
+    signal: AbortSignal.timeout(10_000),
+  });
+
+  if (!response.ok) {
+    const details = await response.text().catch(() => "");
+    const error = new Error(`Brevo responded with ${response.status}: ${details.slice(0, 300)}`);
+    logError("mail", error);
+    throw error;
+  }
 }
 
 export const sendVerificationEmail = async (email: string, token: string) => {

@@ -6,6 +6,8 @@ import { requireUser } from "@/lib/current-user";
 import { requireBoardMember, requireOrgMember } from "@/lib/permissions";
 import { toActionResult } from "@/lib/action-result";
 import { CreateBoardSchema } from "@/schemas";
+import { AppError } from "@/lib/errors";
+import { DEMO_LIMITS, DEMO_MESSAGES } from "@/lib/demo-config";
 
 export const getBoards = async (
   organizationId: string,
@@ -51,6 +53,12 @@ export const createBoard = async (values: z.infer<typeof CreateBoardSchema>) =>
     const { organizationId, title } = validated.data;
     await requireOrgMember(organizationId);
     const user = await requireUser();
+
+    // Enforced here, on the server: hiding the button would stop nobody.
+    if (user.isDemo) {
+      const boards = await db.board.count({ where: { organizationId } });
+      if (boards >= DEMO_LIMITS.boards) throw new AppError(DEMO_MESSAGES.boards, 403);
+    }
 
     const board = await db.board.create({
       data: {

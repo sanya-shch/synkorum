@@ -23,6 +23,13 @@ describe("buildSecurityHeaders", () => {
     expect(csp).toContain("wss://*.liveblocks.io");
   });
 
+  it("allows Cloudflare Turnstile (script and challenge frame) and nothing else third-party", () => {
+    const csp = get(prod, "Content-Security-Policy")!;
+    expect(csp).toMatch(/script-src [^;]*https:\/\/challenges\.cloudflare\.com/);
+    expect(csp).toContain("frame-src https://challenges.cloudflare.com");
+    expect(csp).toContain("default-src 'self'");
+  });
+
   it("does not allow eval or localhost in production", () => {
     const csp = get(prod, "Content-Security-Policy")!;
     expect(csp).not.toContain("unsafe-eval");

@@ -5,13 +5,15 @@
 // (generated in proxy.ts). It therefore does NOT stop injected inline script - that is what
 // the output escaping in lib/layer-text.ts is for. What it does give: no third-party
 // scripts, no plugins, no <base> hijacking, no framing (clickjacking), restricted form
-// targets and network connections.
+// targets and network connections. The single exception is Cloudflare Turnstile.
 
 export function buildSecurityHeaders({ isProd }: { isProd: boolean }) {
   const csp = [
     "default-src 'self'",
     // Dev needs eval for React refresh / source maps.
-    `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
+    // Cloudflare Turnstile (bot check on "Try demo"): its script and its challenge iframe.
+    `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${isProd ? "" : " 'unsafe-eval'"}`,
+    "frame-src https://challenges.cloudflare.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",

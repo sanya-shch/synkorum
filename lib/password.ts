@@ -1,6 +1,14 @@
 import bcrypt from "bcryptjs";
+import { IS_FOR_PORTFOLIO } from "@/lib/portfolio";
 
-const SALT_ROUNDS = 12;
+// 12 is the production setting. The portfolio deployment runs on Vercel Hobby, which pauses
+// the whole site after 4 hours of Active CPU per month, and bcryptjs (pure JS) burns hundreds
+// of milliseconds of CPU on every hash - so there it uses cost 10 (4x cheaper). The cost is
+// stored inside each hash, so hashes created under either setting keep verifying.
+const PRODUCTION_SALT_ROUNDS = 12;
+const PORTFOLIO_SALT_ROUNDS = 10;
+
+export const SALT_ROUNDS = IS_FOR_PORTFOLIO ? PORTFOLIO_SALT_ROUNDS : PRODUCTION_SALT_ROUNDS;
 
 export const hashPassword = (password: string) => bcrypt.hash(password, SALT_ROUNDS);
 

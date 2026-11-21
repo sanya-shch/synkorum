@@ -21,7 +21,7 @@ Full list: [docs/features.md](docs/features.md).
 
 ## Tech Stack
 
-Next.js 16 (App Router) · React 19 · TypeScript · PostgreSQL + Prisma 7 · Liveblocks · Tailwind CSS + shadcn/ui · Zustand · Resend · Vitest + Playwright
+Next.js 16 (App Router) · React 19 · TypeScript · PostgreSQL + Prisma 7 · Liveblocks · Tailwind CSS + shadcn/ui · Zustand · Brevo · Vitest + Playwright
 
 ## Getting Started
 
@@ -47,3 +47,4 @@ Environment variables are described in [docs/configuration.md](docs/configuratio
 | [Authentication](docs/authentication.md)       | Sessions, passwords, rate limiting                                   |
 | [Development](docs/development.md)             | Scripts, formatting, project layout                                  |                    |
 | [Configuration](docs/configuration.md)         | Environment variables                                                |
+| [Portfolio mode](docs/portfolio-mode.md)       | "Try demo" accounts, their limits, free-tier deployment              |
