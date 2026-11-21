@@ -7,6 +7,7 @@ import { requireOrgAdmin, requireOrgMember, assertNotLastAdmin } from "@/lib/per
 import { toActionResult } from "@/lib/action-result";
 import { AppError } from "@/lib/errors";
 import { assertNotDemo } from "@/lib/demo";
+import { deleteBoardRoom } from "@/lib/liveblocks-server";
 import { DEMO_MESSAGES } from "@/lib/demo-config";
 import { CreateOrganizationSchema, UpdateOrganizationSchema } from "@/schemas";
 
@@ -176,7 +177,11 @@ export const deleteOrganization = async (organizationId: string) =>
     assertNotDemo(await requireUser(), DEMO_MESSAGES.deleteOrganization);
     await requireOrgAdmin(organizationId);
 
+    // Collected first: the rows are gone once the team is deleted.
+    const boards = await db.board.findMany({ where: { organizationId }, select: { id: true } });
+
     await db.organization.delete({ where: { id: organizationId } });
+    await Promise.all(boards.map((board) => deleteBoardRoom(board.id)));
 
     return { success: "Team deleted" };
   });

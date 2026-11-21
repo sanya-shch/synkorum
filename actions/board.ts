@@ -8,6 +8,8 @@ import { toActionResult } from "@/lib/action-result";
 import { CreateBoardSchema } from "@/schemas";
 import { AppError } from "@/lib/errors";
 import { DEMO_LIMITS, DEMO_MESSAGES } from "@/lib/demo-config";
+import { deleteBoardRoom } from "@/lib/liveblocks-server";
+import { IS_FOR_PORTFOLIO, PORTFOLIO_LIMITS, PORTFOLIO_MESSAGES } from "@/lib/portfolio";
 
 export const getBoards = async (
   organizationId: string,
@@ -54,6 +56,11 @@ export const createBoard = async (values: z.infer<typeof CreateBoardSchema>) =>
     await requireOrgMember(organizationId);
     const user = await requireUser();
 
+    // Free-tier guard: every board becomes a Liveblocks room (500 active per month on Free).
+    if (IS_FOR_PORTFOLIO && (await db.board.count()) >= PORTFOLIO_LIMITS.maxBoards) {
+      throw new AppError(PORTFOLIO_MESSAGES.boards, 503);
+    }
+
     // Enforced here, on the server: hiding the button would stop nobody.
     if (user.isDemo) {
       const boards = await db.board.count({ where: { organizationId } });
@@ -87,6 +94,8 @@ export const deleteBoard = async (boardId: string) =>
     await requireBoardMember(boardId);
 
     await db.board.delete({ where: { id: boardId } });
+    // Free the room's stored data too (best effort, never fails the delete).
+    await deleteBoardRoom(boardId);
 
     return { success: "The board was deleted" };
   });

@@ -5,14 +5,18 @@ import { ResetSchema } from "@/schemas";
 import { generatePasswordResetToken } from "@/lib/tokens";
 import { sendPasswordResetEmail } from "@/lib/mail";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { emailBudgetAvailable, EMAIL_BUDGET_MESSAGE } from "@/lib/email-budget";
 
 const GENERIC_MESSAGE = "If such an email is registered, a letter has been sent to it";
 
 export async function POST(request: Request) {
-  const { allowed, retryAfterSeconds } = checkRateLimit(`forgot-password:${getClientIp(request)}`, {
-    limit: 3,
-    windowMs: 60_000,
-  });
+  const { allowed, retryAfterSeconds } = await checkRateLimit(
+    `forgot-password:${getClientIp(request)}`,
+    {
+      limit: 3,
+      windowMs: 60_000,
+    },
+  );
   if (!allowed) {
     return NextResponse.json(
       { error: "Too many attempts. Please try again later." },
@@ -25,6 +29,11 @@ export async function POST(request: Request) {
 
   if (!validated.success) {
     return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
+  }
+
+  // Independent of the address, so it reveals nothing about which accounts exist.
+  if (!(await emailBudgetAvailable())) {
+    return NextResponse.json({ error: EMAIL_BUDGET_MESSAGE }, { status: 503 });
   }
 
   const { email } = validated.data;

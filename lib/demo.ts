@@ -11,6 +11,7 @@ import {
 } from "@/lib/demo-config";
 import { buildDemoBoardStorage } from "@/lib/demo-board";
 import { deleteBoardRoom, seedBoardRoom } from "@/lib/liveblocks-server";
+import { IS_FOR_PORTFOLIO, PORTFOLIO_LIMITS } from "@/lib/portfolio";
 
 // Thrown when the global demo budget is used up; the route answers 503 and offers the
 // read-only fallback instead.
@@ -35,6 +36,11 @@ export async function createDemoSession(now: Date = new Date()) {
   const since = new Date(now.getTime() - DEMO_TTL_MS);
   const active = await db.user.count({ where: { isDemo: true, createdAt: { gt: since } } });
   if (active >= DEMO_LIMITS.maxActiveSessions) throw new DemoCapacityError();
+
+  // Free-tier guard shared with regular boards: no new Liveblocks rooms once the cap is hit.
+  if (IS_FOR_PORTFOLIO && (await db.board.count()) >= PORTFOLIO_LIMITS.maxBoards) {
+    throw new DemoCapacityError();
+  }
 
   const suffix = crypto.randomUUID();
 

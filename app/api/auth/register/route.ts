@@ -5,6 +5,10 @@ import { hashPassword } from "@/lib/password";
 import { generateVerificationToken } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/mail";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { runAfterResponse } from "@/lib/after-response";
+import { emailBudgetAvailable, EmailBudgetError, EMAIL_BUDGET_MESSAGE } from "@/lib/email-budget";
+import { runHousekeeping } from "@/lib/housekeeping";
+import { VERIFICATION_WINDOW_HOURS } from "@/lib/unverified";
 
 function isUniqueConstraintError(err: unknown) {
   return typeof err === "object" && err !== null && (err as { code?: unknown }).code === "P2002";
@@ -19,7 +23,7 @@ function slugify(input: string) {
 }
 
 export async function POST(request: Request) {
-  const { allowed, retryAfterSeconds } = checkRateLimit(`register:${getClientIp(request)}`, {
+  const { allowed, retryAfterSeconds } = await checkRateLimit(`register:${getClientIp(request)}`, {
     limit: 5,
     windowMs: 60_000,
   });
@@ -38,6 +42,12 @@ export async function POST(request: Request) {
   }
 
   const { name, email, password, inviteToken } = validated.data;
+
+  // Refuse before creating anything: an account whose confirmation email can't go out would
+  // just sit there unusable.
+  if (!(await emailBudgetAvailable())) {
+    return NextResponse.json({ error: EMAIL_BUDGET_MESSAGE }, { status: 503 });
+  }
 
   const existingUser = await db.user.findUnique({ where: { email } });
   if (existingUser) {
@@ -108,17 +118,22 @@ export async function POST(request: Request) {
 
   try {
     await sendVerificationEmail(verificationToken.email, verificationToken.token);
-  } catch {
+  } catch (err) {
     return NextResponse.json(
       {
         error:
-          "The account was created, but the email was not sent. Try logging in later - we will send a new email automatically.",
+          err instanceof EmailBudgetError
+            ? `${EMAIL_BUDGET_MESSAGE} Your account is saved - log in tomorrow and we will send the confirmation email then.`
+            : "The account was created, but the email was not sent. Try logging in later - we will send a new email automatically.",
       },
-      { status: 502 },
+      { status: err instanceof EmailBudgetError ? 503 : 502 },
     );
   }
 
+  // Sweep abandoned sign-ups (and expired demos) after the response.
+  runAfterResponse("housekeeping", () => runHousekeeping({ limit: 25 }));
+
   return NextResponse.json({
-    success: "Check your email to confirm your account.",
+    success: `Check your email to confirm your account. Unconfirmed accounts are deleted after ${VERIFICATION_WINDOW_HOURS} hours.`,
   });
 }

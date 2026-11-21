@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const { purgeMock } = vi.hoisted(() => ({ purgeMock: vi.fn() }));
-vi.mock("@/lib/demo", () => ({ purgeExpiredDemos: purgeMock }));
+vi.mock("@/lib/housekeeping", () => ({ runHousekeeping: purgeMock }));
 
 import { GET } from "@/app/api/cron/purge-demos/route";
 
@@ -13,7 +13,10 @@ const call = (authorization?: string) =>
   );
 
 beforeEach(() => {
-  purgeMock.mockReset().mockResolvedValue({ users: 3, organizations: 3, rooms: 4 });
+  purgeMock.mockReset().mockResolvedValue({
+    demos: { users: 3, organizations: 3, rooms: 4 },
+    unverified: { users: 1, organizations: 1 },
+  });
 });
 
 afterEach(() => {
@@ -41,6 +44,10 @@ describe("GET /api/cron/purge-demos", () => {
     const res = await call("Bearer s3cret-value");
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ users: 3, organizations: 3, rooms: 4 });
+    expect(await res.json()).toEqual({
+      demos: { users: 3, organizations: 3, rooms: 4 },
+      unverified: { users: 1, organizations: 1 },
+    });
+    expect(purgeMock).toHaveBeenCalledWith({ limit: 500 });
   });
 });

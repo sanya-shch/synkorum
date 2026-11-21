@@ -1,3 +1,4 @@
+import { deleteBoardRoomMock } from "../mocks/liveblocks-server";
 import { describe, it, expect, beforeEach } from "vitest";
 import { prismaMock } from "../mocks/db";
 import { currentUserMock } from "../mocks/current-user";
@@ -32,6 +33,19 @@ describe("createBoard", () => {
 
     expect(result).toEqual({ error: "Incorrect data" });
     expect(prismaMock.membership.findUnique).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteBoard - Liveblocks cleanup", () => {
+  it("deletes the board's room after deleting the board", async () => {
+    prismaMock.board.findUnique.mockResolvedValue({ id: BOARD_ID, organizationId: ORG_ID } as any);
+    prismaMock.membership.findUnique.mockResolvedValue({ role: "MEMBER" } as any);
+    prismaMock.board.delete.mockResolvedValue({} as any);
+
+    const result = await deleteBoard(BOARD_ID);
+
+    expect(result).toMatchObject({ success: expect.any(String) });
+    expect(deleteBoardRoomMock).toHaveBeenCalledWith(BOARD_ID);
   });
 });
 

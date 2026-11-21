@@ -1,3 +1,4 @@
+import { deleteBoardRoomMock } from "../mocks/liveblocks-server";
 import { describe, it, expect, beforeEach } from "vitest";
 import { prismaMock } from "../mocks/db";
 import { currentUserMock } from "../mocks/current-user";
@@ -210,11 +211,24 @@ describe("deleteOrganization", () => {
 
   it("allows an admin to delete the org", async () => {
     prismaMock.membership.findUnique.mockResolvedValue(adminMembership);
+    prismaMock.board.findMany.mockResolvedValue([]);
     prismaMock.organization.delete.mockResolvedValue({} as any);
 
     const result = await deleteOrganization(ORG_ID);
 
     expect(result).toMatchObject({ success: expect.any(String) });
     expect(prismaMock.organization.delete).toHaveBeenCalledWith({ where: { id: ORG_ID } });
+  });
+
+  it("also deletes the Liveblocks room of every board in the deleted team", async () => {
+    prismaMock.membership.findUnique.mockResolvedValue(adminMembership);
+    prismaMock.board.findMany.mockResolvedValue([{ id: "b1" }, { id: "b2" }] as any);
+    prismaMock.organization.delete.mockResolvedValue({} as any);
+
+    await deleteOrganization(ORG_ID);
+
+    expect(deleteBoardRoomMock).toHaveBeenCalledTimes(2);
+    expect(deleteBoardRoomMock).toHaveBeenCalledWith("b1");
+    expect(deleteBoardRoomMock).toHaveBeenCalledWith("b2");
   });
 });

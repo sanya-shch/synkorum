@@ -6,6 +6,7 @@ import { createBoard } from "@/actions/board";
 import { createOrganization, deleteOrganization } from "@/actions/organization";
 import { createBoardShareLink, inviteMemberByEmail } from "@/actions/invite";
 import { DEMO_LIMITS, DEMO_MESSAGES } from "@/lib/demo-config";
+import { PORTFOLIO_LIMITS, PORTFOLIO_MESSAGES } from "@/lib/portfolio";
 
 const ORG_ID = "org_1";
 const BOARD_ID = "board_1";
@@ -53,8 +54,21 @@ describe("demo account limits (enforced on the server)", () => {
 
       await createBoard({ organizationId: ORG_ID, title: "Anything" });
 
-      expect(prismaMock.board.count).not.toHaveBeenCalled();
+      // Only the global free-tier count - never the per-team demo count.
+      expect(prismaMock.board.count).not.toHaveBeenCalledWith({
+        where: { organizationId: ORG_ID },
+      });
       expect(prismaMock.board.create).toHaveBeenCalled();
+    });
+
+    it("refuses everyone once the deployment-wide board cap is reached (portfolio mode)", async () => {
+      signInAs(false);
+      prismaMock.board.count.mockResolvedValue(PORTFOLIO_LIMITS.maxBoards);
+
+      const result = await createBoard({ organizationId: ORG_ID, title: "One too many" });
+
+      expect(result).toEqual({ error: PORTFOLIO_MESSAGES.boards });
+      expect(prismaMock.board.create).not.toHaveBeenCalled();
     });
   });
 

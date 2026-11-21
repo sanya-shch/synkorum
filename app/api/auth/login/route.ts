@@ -6,9 +6,10 @@ import { buildSessionCookie } from "@/lib/session";
 import { generateVerificationToken } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/mail";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { emailBudgetAvailable, EmailBudgetError, EMAIL_BUDGET_MESSAGE } from "@/lib/email-budget";
 
 export async function POST(request: Request) {
-  const { allowed, retryAfterSeconds } = checkRateLimit(`login:${getClientIp(request)}`, {
+  const { allowed, retryAfterSeconds } = await checkRateLimit(`login:${getClientIp(request)}`, {
     limit: 5,
     windowMs: 60_000,
   });
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
   const { email, password } = validated.data;
 
   // Per-account limit on top of the per-IP one, so a botnet can't brute-force a single account.
-  const accountLimit = checkRateLimit(`login-email:${email.toLowerCase()}`, {
+  const accountLimit = await checkRateLimit(`login-email:${email.toLowerCase()}`, {
     limit: 10,
     windowMs: 15 * 60_000,
   });
@@ -53,11 +54,18 @@ export async function POST(request: Request) {
   }
 
   if (!user.emailVerified) {
+    if (!(await emailBudgetAvailable())) {
+      return NextResponse.json({ error: EMAIL_BUDGET_MESSAGE }, { status: 503 });
+    }
+
     const verificationToken = await generateVerificationToken(user.email);
 
     try {
       await sendVerificationEmail(verificationToken.email, verificationToken.token);
-    } catch {
+    } catch (err) {
+      if (err instanceof EmailBudgetError) {
+        return NextResponse.json({ error: EMAIL_BUDGET_MESSAGE }, { status: 503 });
+      }
       return NextResponse.json(
         { error: "The verification email could not be sent. Please try again later." },
         { status: 502 },

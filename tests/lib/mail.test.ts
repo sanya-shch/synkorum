@@ -1,8 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const fetchMock = vi.fn();
+const { reserveMock } = vi.hoisted(() => ({ reserveMock: vi.fn() }));
+
+vi.mock("@/lib/email-budget", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/email-budget")>()),
+  reserveEmailSlot: reserveMock,
+}));
 
 beforeEach(() => {
+  reserveMock.mockReset().mockResolvedValue(true);
   fetchMock.mockReset().mockResolvedValue(new Response('{"messageId":"1"}', { status: 201 }));
   vi.stubGlobal("fetch", fetchMock);
   process.env.BREVO_API_KEY = "brevo-key";
@@ -86,6 +93,17 @@ describe("Brevo transport", () => {
 
     await sendVerificationEmail("demo-1@demo.invalid", "tok");
 
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("does not call Brevo once the daily budget is used up", async () => {
+    reserveMock.mockResolvedValue(false);
+    const { sendVerificationEmail } = await loadMail();
+    const { EmailBudgetError } = await import("@/lib/email-budget");
+
+    await expect(sendVerificationEmail("user@a.com", "tok")).rejects.toBeInstanceOf(
+      EmailBudgetError,
+    );
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

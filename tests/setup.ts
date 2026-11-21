@@ -2,7 +2,10 @@ import { vi, beforeEach } from "vitest";
 import { mockReset } from "vitest-mock-extended";
 import { prismaMock } from "./mocks/db";
 import { resetRateLimits } from "@/lib/rate-limit";
+import { resetEmailBudget } from "@/lib/email-budget";
 import { currentUserMock } from "./mocks/current-user";
+import { seedBoardRoomMock, deleteBoardRoomMock } from "./mocks/liveblocks-server";
+import { runHousekeepingMock } from "./mocks/housekeeping";
 import {
   sendVerificationEmailMock,
   sendPasswordResetEmailMock,
@@ -21,6 +24,13 @@ vi.mock("@/lib/current-user", () => ({
   requireUser: currentUserMock,
 }));
 
+vi.mock("@/lib/liveblocks-server", () => ({
+  seedBoardRoom: seedBoardRoomMock,
+  deleteBoardRoom: deleteBoardRoomMock,
+}));
+
+vi.mock("@/lib/housekeeping", () => ({ runHousekeeping: runHousekeepingMock }));
+
 vi.mock("@/lib/mail", () => ({
   sendVerificationEmail: sendVerificationEmailMock,
   sendPasswordResetEmail: sendPasswordResetEmailMock,
@@ -29,6 +39,10 @@ vi.mock("@/lib/mail", () => ({
 
 beforeEach(() => {
   resetRateLimits();
+  resetEmailBudget();
+  runHousekeepingMock.mockReset().mockResolvedValue({ demos: {}, unverified: {} });
+  seedBoardRoomMock.mockReset().mockResolvedValue(undefined);
+  deleteBoardRoomMock.mockReset().mockResolvedValue(undefined);
   mockReset(prismaMock);
   currentUserMock.mockReset();
   sendVerificationEmailMock.mockReset().mockResolvedValue(undefined);

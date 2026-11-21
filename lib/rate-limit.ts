@@ -1,9 +1,15 @@
-// Simple in-memory fixed-window rate limiter, keyed by IP + action name.
+// Fixed-window rate limiter, keyed by IP + action name.
 //
-// Good enough for a single-instance deployment / to stop the crudest brute-force
-// and email-bombing attempts. It does NOT share state across serverless instances -
-// for real production traffic on Vercel/serverless, swap this for @upstash/ratelimit
-// (Redis-backed) using the same checkRateLimit(key) call signature.
+// With UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN set it is backed by Upstash Redis
+// (@upstash/ratelimit), so the limit is shared by every serverless instance. Without them
+// (local development) - or if Redis is unreachable - it falls back to an in-memory window
+// that is per instance: still stops the crudest brute force, but can be sidestepped by
+// spreading requests over instances. A Redis outage therefore degrades protection instead
+// of locking everybody out of logging in.
+
+import { Ratelimit } from "@upstash/ratelimit";
+import { getRedis } from "@/lib/redis";
+import { logError } from "@/lib/logger";
 
 type Bucket = { count: number; resetAt: number };
 
@@ -20,10 +26,29 @@ setInterval(
   5 * 60 * 1000,
 ).unref?.();
 
-export function checkRateLimit(
-  key: string,
-  { limit, windowMs }: { limit: number; windowMs: number },
-): { allowed: boolean; retryAfterSeconds: number } {
+type RateLimitOptions = { limit: number; windowMs: number };
+type RateLimitResult = { allowed: boolean; retryAfterSeconds: number };
+
+const limiters = new Map<string, Ratelimit>();
+
+function getLimiter({ limit, windowMs }: RateLimitOptions): Ratelimit | null {
+  const redis = getRedis();
+  if (!redis) return null;
+
+  const id = `${limit}:${windowMs}`;
+  let limiter = limiters.get(id);
+  if (!limiter) {
+    limiter = new Ratelimit({
+      redis,
+      limiter: Ratelimit.fixedWindow(limit, `${windowMs} ms`),
+      prefix: "synkorum:rl",
+    });
+    limiters.set(id, limiter);
+  }
+  return limiter;
+}
+
+function checkInMemory(key: string, { limit, windowMs }: RateLimitOptions): RateLimitResult {
   const now = Date.now();
   const bucket = buckets.get(key);
 
@@ -38,6 +63,27 @@ export function checkRateLimit(
 
   bucket.count += 1;
   return { allowed: true, retryAfterSeconds: 0 };
+}
+
+export async function checkRateLimit(
+  key: string,
+  options: RateLimitOptions,
+): Promise<RateLimitResult> {
+  const limiter = getLimiter(options);
+
+  if (limiter) {
+    try {
+      const { success, reset } = await limiter.limit(key);
+      return {
+        allowed: success,
+        retryAfterSeconds: success ? 0 : Math.max(1, Math.ceil((reset - Date.now()) / 1000)),
+      };
+    } catch (err) {
+      logError("rate-limit", err);
+    }
+  }
+
+  return checkInMemory(key, options);
 }
 
 // Number of trusted reverse proxies in front of the app (each one appends to

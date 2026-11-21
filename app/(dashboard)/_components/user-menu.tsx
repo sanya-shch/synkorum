@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, MoreHorizontal } from "lucide-react";
+import { LogOut, MoreHorizontal, Trash2 } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -13,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DeleteAccountModal } from "@/components/modals/delete-account-modal";
 import { cn } from "@/lib/utils";
 
 interface UserMenuProps {
@@ -25,6 +27,7 @@ interface UserMenuProps {
 
 export const UserMenu = ({ name, email, image, variant = "avatar" }: UserMenuProps) => {
   const router = useRouter();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const initials = (name ?? email ?? "?").slice(0, 1).toUpperCase();
 
@@ -42,48 +45,60 @@ export const UserMenu = ({ name, email, image, variant = "avatar" }: UserMenuPro
   );
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label="Account menu"
-        className={cn(
-          "cursor-pointer outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-          variant === "card"
-            ? "flex w-full items-center gap-x-3 rounded-xl p-2 text-left transition hover:bg-muted"
-            : "rounded-full",
-        )}
-      >
-        {avatar}
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label="Account menu"
+          className={cn(
+            "cursor-pointer outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+            variant === "card"
+              ? "flex w-full items-center gap-x-3 rounded-xl p-2 text-left transition hover:bg-muted"
+              : "rounded-full",
+          )}
+        >
+          {avatar}
 
-        {variant === "card" && (
-          <>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium">{name}</span>
-              <span className="block truncate text-xs text-muted-foreground">{email}</span>
-            </span>
-            <MoreHorizontal className="size-4 shrink-0 text-muted-foreground" />
-          </>
-        )}
-      </DropdownMenuTrigger>
+          {variant === "card" && (
+            <>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium">{name}</span>
+                <span className="block truncate text-xs text-muted-foreground">{email}</span>
+              </span>
+              <MoreHorizontal className="size-4 shrink-0 text-muted-foreground" />
+            </>
+          )}
+        </DropdownMenuTrigger>
 
-      <DropdownMenuContent
-        align={variant === "card" ? "start" : "end"}
-        side={variant === "card" ? "top" : "bottom"}
-        className="w-56 rounded-xl p-1.5"
-      >
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="truncate">
-            {name}
-            <div className="truncate text-xs font-normal text-muted-foreground">{email}</div>
-          </DropdownMenuLabel>
-        </DropdownMenuGroup>
+        <DropdownMenuContent
+          align={variant === "card" ? "start" : "end"}
+          side={variant === "card" ? "top" : "bottom"}
+          className="w-56 rounded-xl p-1.5"
+        >
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="truncate">
+              {name}
+              <div className="truncate text-xs font-normal text-muted-foreground">{email}</div>
+            </DropdownMenuLabel>
+          </DropdownMenuGroup>
 
-        <DropdownMenuSeparator />
+          <DropdownMenuSeparator />
 
-        <DropdownMenuItem className="cursor-pointer gap-x-2 rounded-lg" onClick={handleLogout}>
-          <LogOut className="size-4" />
-          Log out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuItem className="cursor-pointer gap-x-2 rounded-lg" onClick={handleLogout}>
+            <LogOut className="size-4" />
+            Log out
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            className="cursor-pointer gap-x-2 rounded-lg text-red-600 focus:text-red-600"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="size-4" />
+            Delete account
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DeleteAccountModal open={deleteOpen} onOpenChange={setDeleteOpen} />
+    </>
   );
 };

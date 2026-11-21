@@ -1,6 +1,7 @@
 import { escapeHtml } from "@/lib/layer-text";
 import { logError } from "@/lib/logger";
 import { isDemoEmail } from "@/lib/demo-config";
+import { EmailBudgetError, reserveEmailSlot } from "@/lib/email-budget";
 
 // Transactional email through Brevo's HTTP API (https://developers.brevo.com/reference/sendtransacemail).
 // Plain fetch on purpose: one endpoint, no SDK dependency to ship to a serverless function.
@@ -32,6 +33,10 @@ async function send(to: string, subject: string, html: string) {
   if (!sender) {
     throw new Error('EMAIL_FROM is not set (expected e.g. "Synkorum <noreply@your-domain.com>")');
   }
+
+  // Counted before sending (failed sends count too): better to stop a little early than to
+  // burn through the provider's daily quota.
+  if (!(await reserveEmailSlot())) throw new EmailBudgetError();
 
   const response = await fetch(BREVO_ENDPOINT, {
     method: "POST",

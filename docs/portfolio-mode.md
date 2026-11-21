@@ -19,6 +19,13 @@ Why: Vercel Hobby pauses the whole project after 4 hours of Active CPU per month
 is pure JavaScript. Cost 10 is 4x cheaper per hash. The cost is stored inside each hash, so
 accounts created under either setting keep working.
 
+The two global caps sit below the free-tier limits they protect (Liveblocks: 500 active rooms
+per month, every board is a room; Brevo: 300 emails per day) and live in `PORTFOLIO_LIMITS`.
+When a cap is hit the user gets a plain message instead of a silent failure: sign-up, login of
+an unconfirmed account and password reset all say the daily email limit is used up (and point
+to "Try demo", which needs no email); creating a board says the free-tier board limit is
+reached. The email counter lives in Upstash Redis (or in memory without it).
+
 The demo rules below are **not** behind the flag - they are ordinary product rules for `isDemo`
 accounts.
 
@@ -79,6 +86,20 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://your-app.vercel.app/api/cro
 
 It only ever touches `isDemo` users and teams consisting solely of demo users.
 
+The same job (`lib/housekeeping.ts`) also deletes **unconfirmed sign-ups**: accounts created
+more than 24 hours ago that never confirmed their email and have no verification link still
+valid (logging in re-sends one, which gives another window). The sign-up screen says so. Their
+sign-up team is deleted with them, unless somebody else is in it.
+
+## Deleting boards, teams and accounts
+
+- Deleting a board deletes its Liveblocks room (the stored canvas) too.
+- Deleting a team deletes the rooms of all its boards.
+- **Delete account** (account menu, asks for the password): teams where the person is the only
+  member are deleted with everything in them, rooms included. In teams shared with others the
+  person just leaves; if they are the last admin the deletion is refused until another member
+  is promoted or the team is deleted. Demo accounts can't do this - they expire on their own.
+
 ## Setup checklist
 
 1. Neon: create a project, run `npx prisma migrate deploy` with the **direct** connection
@@ -89,6 +110,10 @@ It only ever touches `isDemo` users and teams consisting solely of demo users.
 4. Cloudflare Turnstile: create a widget for your domain, set
    `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`.
 5. Set `CRON_SECRET`.
-6. Optional: create a real account, build a showcase board, create a read-only share link and put
+6. Upstash: create a free Redis database (console.upstash.com, no card), copy the REST URL and
+   token into `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`. It holds the shared
+   rate-limit counters and the daily email budget. If it is missing or down, the app falls
+   back to per-instance in-memory counters instead of failing.
+7. Optional: create a real account, build a showcase board, create a read-only share link and put
    it in `DEMO_FALLBACK_URL`.
-7. Do not add a payment card to any of these services.
+8. Do not add a payment card to any of these services.

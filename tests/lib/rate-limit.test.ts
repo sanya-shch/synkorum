@@ -9,40 +9,40 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe("checkRateLimit", () => {
-  it("allows requests up to the limit", () => {
+  it("allows requests up to the limit", async () => {
     const key = uniqueKey();
     for (let i = 0; i < opts.limit; i++) {
-      expect(checkRateLimit(key, opts).allowed).toBe(true);
+      expect((await checkRateLimit(key, opts)).allowed).toBe(true);
     }
   });
 
-  it("blocks the request after the limit and reports retryAfterSeconds", () => {
+  it("blocks the request after the limit and reports retryAfterSeconds", async () => {
     const key = uniqueKey();
-    for (let i = 0; i < opts.limit; i++) checkRateLimit(key, opts);
+    for (let i = 0; i < opts.limit; i++) await checkRateLimit(key, opts);
 
     vi.advanceTimersByTime(10_000);
-    const result = checkRateLimit(key, opts);
+    const result = await checkRateLimit(key, opts);
 
     expect(result.allowed).toBe(false);
     expect(result.retryAfterSeconds).toBe(50);
   });
 
-  it("resets after the window has passed", () => {
+  it("resets after the window has passed", async () => {
     const key = uniqueKey();
-    for (let i = 0; i < opts.limit + 1; i++) checkRateLimit(key, opts);
+    for (let i = 0; i < opts.limit + 1; i++) await checkRateLimit(key, opts);
 
     vi.advanceTimersByTime(opts.windowMs + 1);
 
-    expect(checkRateLimit(key, opts).allowed).toBe(true);
+    expect((await checkRateLimit(key, opts)).allowed).toBe(true);
   });
 
-  it("tracks keys independently", () => {
+  it("tracks keys independently", async () => {
     const a = uniqueKey();
     const b = uniqueKey();
-    for (let i = 0; i < opts.limit; i++) checkRateLimit(a, opts);
+    for (let i = 0; i < opts.limit; i++) await checkRateLimit(a, opts);
 
-    expect(checkRateLimit(a, opts).allowed).toBe(false);
-    expect(checkRateLimit(b, opts).allowed).toBe(true);
+    expect((await checkRateLimit(a, opts)).allowed).toBe(false);
+    expect((await checkRateLimit(b, opts)).allowed).toBe(true);
   });
 });
 

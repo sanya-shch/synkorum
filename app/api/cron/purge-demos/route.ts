@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-import { purgeExpiredDemos } from "@/lib/demo";
+import { runHousekeeping } from "@/lib/housekeeping";
 
 // Called by Vercel Cron (vercel.json). Vercel sends `Authorization: Bearer $CRON_SECRET`
 // automatically when the CRON_SECRET environment variable is set. Without it the endpoint
@@ -17,5 +17,5 @@ const isAuthorized = (request: Request) => {
 export async function GET(request: Request) {
   if (!isAuthorized(request)) return new Response("Unauthorized", { status: 401 });
 
-  return NextResponse.json(await purgeExpiredDemos({ limit: 500 }));
+  return NextResponse.json(await runHousekeeping({ limit: 500 }));
 }

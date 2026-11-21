@@ -1,28 +1,18 @@
-import { after, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/current-user";
-import { createDemoSession, DemoCapacityError, purgeExpiredDemos } from "@/lib/demo";
+import { runAfterResponse } from "@/lib/after-response";
+import { createDemoSession, DemoCapacityError } from "@/lib/demo";
+import { runHousekeeping } from "@/lib/housekeeping";
 import { logError } from "@/lib/logger";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { buildSessionCookie } from "@/lib/session";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { DASHBOARD_PATH } from "@/routes";
 
-// Sweeping expired demos after the response means visitors never wait for it, and the
-// weekly cron (app/api/cron/purge-demos) only has to catch what this missed.
-function runAfterResponse(task: () => Promise<unknown>) {
-  const safe = () => task().catch((err) => logError("demo-purge", err));
-  try {
-    after(safe);
-  } catch {
-    // Not inside a request scope (e.g. unit tests): just fire and forget.
-    void safe();
-  }
-}
-
 export async function POST(request: Request) {
   const ip = getClientIp(request);
 
-  const { allowed, retryAfterSeconds } = checkRateLimit(`demo:${ip}`, {
+  const { allowed, retryAfterSeconds } = await checkRateLimit(`demo:${ip}`, {
     limit: 5,
     windowMs: 60 * 60_000,
   });
@@ -55,7 +45,9 @@ export async function POST(request: Request) {
     const cookie = await buildSessionCookie(user.id, { demo: true });
     response.cookies.set(cookie.name, cookie.value, cookie.options);
 
-    runAfterResponse(() => purgeExpiredDemos({ limit: 25 }));
+    // Sweeping after the response means visitors never wait for it; the weekly cron
+    // (app/api/cron/purge-demos) only has to catch what this missed.
+    runAfterResponse("housekeeping", () => runHousekeeping({ limit: 25 }));
     return response;
   } catch (err) {
     if (err instanceof DemoCapacityError) {

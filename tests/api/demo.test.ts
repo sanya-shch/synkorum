@@ -1,16 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { currentUserMock } from "../mocks/current-user";
+import { runHousekeepingMock } from "../mocks/housekeeping";
 
-const { createDemoSessionMock, purgeMock, verifyTurnstileMock } = vi.hoisted(() => ({
+const { createDemoSessionMock, verifyTurnstileMock } = vi.hoisted(() => ({
   createDemoSessionMock: vi.fn(),
-  purgeMock: vi.fn(),
   verifyTurnstileMock: vi.fn(),
 }));
 
 vi.mock("@/lib/demo", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/demo")>()),
   createDemoSession: createDemoSessionMock,
-  purgeExpiredDemos: purgeMock,
 }));
 vi.mock("@/lib/turnstile", () => ({ verifyTurnstile: verifyTurnstileMock }));
 
@@ -29,7 +28,6 @@ const startDemo = (body: unknown = { turnstileToken: "tok" }, ip = `10.9.0.${++n
 
 beforeEach(() => {
   verifyTurnstileMock.mockReset().mockResolvedValue(true);
-  purgeMock.mockReset().mockResolvedValue({ users: 0, organizations: 0, rooms: 0 });
   createDemoSessionMock
     .mockReset()
     .mockResolvedValue({ user: { id: "demo_1" }, board: { id: "b1" } });
@@ -65,7 +63,7 @@ describe("POST /api/auth/demo", () => {
     await startDemo();
     await Promise.resolve();
 
-    expect(purgeMock).toHaveBeenCalledTimes(1);
+    expect(runHousekeepingMock).toHaveBeenCalledWith({ limit: 25 });
   });
 
   it("does not create a second demo for someone who is already signed in", async () => {

@@ -1,5 +1,7 @@
 # Synkorum — Real-Time Collaborative Whiteboard
 
+[![CI](https://github.com/sanya-shch/board/actions/workflows/ci.yml/badge.svg)](https://github.com/sanya-shch/board/actions/workflows/ci.yml)
+
 A Miro-style collaborative whiteboard built with Next.js. Multiple users draw, move, and align shapes on a shared canvas in real time, organized around teams with role-based access.
 
 ## Screenshots

@@ -10,10 +10,13 @@ const RequestSchema = NewPasswordSchema.extend({
 });
 
 export async function POST(request: Request) {
-  const { allowed, retryAfterSeconds } = checkRateLimit(`reset-password:${getClientIp(request)}`, {
-    limit: 10,
-    windowMs: 60_000,
-  });
+  const { allowed, retryAfterSeconds } = await checkRateLimit(
+    `reset-password:${getClientIp(request)}`,
+    {
+      limit: 10,
+      windowMs: 60_000,
+    },
+  );
   if (!allowed) {
     return NextResponse.json(
       { error: "Too many attempts. Please try again later." },

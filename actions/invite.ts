@@ -12,6 +12,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { AppError } from "@/lib/errors";
 import { assertNotDemo } from "@/lib/demo";
 import { DEMO_LIMITS, DEMO_MESSAGES } from "@/lib/demo-config";
+import { assertEmailBudget } from "@/lib/email-budget";
 
 export const inviteMemberByEmail = async (values: z.infer<typeof InviteMemberSchema>) =>
   toActionResult(async () => {
@@ -23,10 +24,11 @@ export const inviteMemberByEmail = async (values: z.infer<typeof InviteMemberSch
     // sender, which would turn the demo into a spam cannon.
     assertNotDemo(await requireUser(), DEMO_MESSAGES.invites);
     await requireOrgAdmin(organizationId);
+    await assertEmailBudget();
 
     // Each invitation sends an email from our domain - don't let one account turn that
     // into a spam cannon.
-    const { allowed } = checkRateLimit(`invite:${organizationId}`, {
+    const { allowed } = await checkRateLimit(`invite:${organizationId}`, {
       limit: 20,
       windowMs: 60 * 60_000,
     });

@@ -18,8 +18,8 @@
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait db && prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
-    "db:generate": "prisma generate",
-    "postinstall": "prisma generate"
+    "db:generate": "node scripts/prisma-generate.mjs",
+    "postinstall": "node scripts/prisma-generate.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -29,6 +29,8 @@
     "@liveblocks/react": "^3.23.1",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
+    "@upstash/ratelimit": "^2.2.1",
+    "@upstash/redis": "^1.41.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
