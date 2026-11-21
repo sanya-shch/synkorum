@@ -79,7 +79,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full rounded bg-black p-2 text-white"
+          className="w-full rounded bg-black p-2 text-white cursor-pointer"
         >
           {inviteToken ? "Join" : "Register"}
         </button>

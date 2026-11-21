@@ -1,5 +1,14 @@
 // "/" is the marketing landing page - it is public, the dashboard lives at /dashboard.
-export const publicRoutes: string[] = ["/", "/invalid-link"];
+export const publicRoutes: string[] = [
+  "/",
+  "/invalid-link",
+  // Generated images (app/icon.tsx, app/apple-icon.tsx, app/opengraph-image.tsx). They have no
+  // file extension, so the proxy matcher runs on them, and they must stay reachable without a
+  // session: browsers, the web app manifest and link-preview crawlers fetch them anonymously.
+  "/icon",
+  "/apple-icon",
+  "/opengraph-image",
+];
 
 export const publicRoutePrefixes: string[] = ["/board-link", "/board", "/invite"];
 

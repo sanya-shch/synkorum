@@ -59,6 +59,16 @@ describe("proxy - unauthenticated visitors", () => {
     },
   );
 
+  it.each(["/icon", "/apple-icon", "/opengraph-image"])(
+    "serves the generated image %s to logged-out visitors instead of redirecting to /login",
+    async (path) => {
+      // These are generated routes (no file extension, so the matcher does run on them).
+      // Redirecting them returns the login HTML where browsers, the web app manifest and
+      // link-preview crawlers (LinkedIn, Slack...) expect an image.
+      expect(passesThrough(await call(path))).toBe(true);
+    },
+  );
+
   it("does not gate /api/cron/* (they authenticate with CRON_SECRET themselves)", async () => {
     expect(passesThrough(await call("/api/cron/purge-demos"))).toBe(true);
   });
