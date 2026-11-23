@@ -9,6 +9,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginSchema } from "@/schemas";
 import { getSafeCallbackUrl } from "@/lib/safe-redirect";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
+import { ArrowRight, Lock, Mail } from "lucide-react";
+import {
+  AuthCard,
+  AuthDivider,
+  AuthShell,
+  authSecondaryLinkClass,
+} from "@/components/auth/auth-shell";
+import { AuthField, AuthMessage, AuthSubmit } from "@/components/auth/auth-form";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -47,53 +55,58 @@ export default function LoginPage() {
     });
   };
 
+  const { errors } = form.formState;
+
   return (
-    <div className="mx-auto max-w-sm space-y-4 py-10">
-      <h1 className="text-xl font-semibold">Вхід</h1>
+    <AuthShell
+      tagline="A shared canvas for better thinking"
+      footer="Secure access to your collaborative workspace"
+    >
+      <AuthCard
+        icon={ArrowRight}
+        eyebrow="Welcome back"
+        title="Sign in to your workspace"
+        description="Pick up where your team left off and keep ideas moving."
+      >
+        <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-5">
+          <AuthField
+            label="Email address"
+            icon={Mail}
+            type="email"
+            placeholder="you@company.com"
+            autoComplete="email"
+            disabled={isPending}
+            error={errors.email?.message}
+            {...form.register("email")}
+          />
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-        <input
-          {...form.register("email")}
-          placeholder="Email"
-          type="email"
-          disabled={isPending}
-          className="w-full rounded border p-2"
-        />
-        <input
-          {...form.register("password")}
-          placeholder="Password"
-          type="password"
-          disabled={isPending}
-          className="w-full rounded border p-2"
-        />
+          <AuthField
+            label="Password"
+            icon={Lock}
+            type="password"
+            placeholder="Enter your password"
+            autoComplete="current-password"
+            disabled={isPending}
+            error={errors.password?.message}
+            labelAction={
+              <Link href="/reset" className="text-sm font-medium hover:underline">
+                Forgot password?
+              </Link>
+            }
+            {...form.register("password")}
+          />
 
-        {message && (
-          <p className={message.type === "error" ? "text-red-600" : "text-green-600"}>
-            {message.text}
-          </p>
-        )}
+          {message && <AuthMessage type={message.type}>{message.text}</AuthMessage>}
 
-        <button
-          type="submit"
-          disabled={isPending}
-          className="w-full rounded bg-black p-2 text-white cursor-pointer"
-        >
-          Log in
-        </button>
-      </form>
+          <AuthSubmit pending={isPending}>Log in</AuthSubmit>
+        </form>
 
-      <div className="space-y-2 text-sm text-center">
-        <Link href="/reset" className="block text-muted-foreground hover:underline">
-          Forgot your password?
+        <AuthDivider>New to Synkorum?</AuthDivider>
+
+        <Link href="/register" className={authSecondaryLinkClass}>
+          Create an account
         </Link>
-
-        <p className="text-muted-foreground">
-          Don&apos;t have an account yet?{" "}
-          <Link href="/register" className="font-medium text-black hover:underline">
-            Register
-          </Link>
-        </p>
-      </div>
-    </div>
+      </AuthCard>
+    </AuthShell>
   );
 }

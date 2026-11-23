@@ -18,8 +18,8 @@ test.describe("login", () => {
 
   test("a verified user can log in and lands on the dashboard", async ({ page }) => {
     await page.goto("/login");
-    await page.getByPlaceholder("Email").fill(user.email);
-    await page.getByPlaceholder("Password").fill(user.password);
+    await page.getByLabel("Email address").fill(user.email);
+    await page.getByLabel("Password", { exact: true }).fill(user.password);
     await page.getByRole("button", { name: "Log in" }).click();
 
     await page.waitForURL("/dashboard");
@@ -27,16 +27,16 @@ test.describe("login", () => {
 
   test("shows the same error for a wrong password as for an unknown email", async ({ page }) => {
     await page.goto("/login");
-    await page.getByPlaceholder("Email").fill(user.email);
-    await page.getByPlaceholder("Password").fill("definitely-the-wrong-password");
+    await page.getByLabel("Email address").fill(user.email);
+    await page.getByLabel("Password", { exact: true }).fill("definitely-the-wrong-password");
     await page.getByRole("button", { name: "Log in" }).click();
 
     const wrongPasswordMessage = await page.locator("p.text-red-600").textContent();
     expect(wrongPasswordMessage).toBeTruthy();
 
     await page.reload();
-    await page.getByPlaceholder("Email").fill("someone-who-does-not-exist@example.com");
-    await page.getByPlaceholder("Password").fill("whatever-123");
+    await page.getByLabel("Email address").fill("someone-who-does-not-exist@example.com");
+    await page.getByLabel("Password", { exact: true }).fill("whatever-123");
     await page.getByRole("button", { name: "Log in" }).click();
 
     const unknownEmailMessage = await page.locator("p.text-red-600").textContent();
@@ -50,10 +50,10 @@ test.describe("register", () => {
 
     try {
       await page.goto("/register");
-      await page.getByPlaceholder("Name").fill("Someone Else");
-      await page.getByPlaceholder("Email").fill(user.email);
-      await page.getByPlaceholder("Password").fill("another-password-123");
-      await page.getByRole("button", { name: /register/i }).click();
+      await page.getByLabel("Full name").fill("Someone Else");
+      await page.getByLabel("Email address").fill(user.email);
+      await page.getByLabel("Password", { exact: true }).fill("another-password-123");
+      await page.getByRole("button", { name: /create account/i }).click();
 
       await expect(page.locator("p.text-red-600")).toContainText(/already exists/i);
     } finally {

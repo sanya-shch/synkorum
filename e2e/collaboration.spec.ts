@@ -20,8 +20,8 @@ test.afterAll(async () => {
 
 async function loginAsOwner(page: Page, boardId: string) {
   await page.goto(`/login?callbackUrl=/board/${boardId}`);
-  await page.getByPlaceholder("Email").fill(fixture.ownerEmail);
-  await page.getByPlaceholder("Password").fill(fixture.ownerPassword);
+  await page.getByLabel("Email address").fill(fixture.ownerEmail);
+  await page.getByLabel("Password", { exact: true }).fill(fixture.ownerPassword);
   await page.getByRole("button", { name: "Log in" }).click();
   await page.waitForURL(`/board/${boardId}`);
 }
