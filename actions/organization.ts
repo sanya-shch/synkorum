@@ -53,7 +53,7 @@ export const getOrganizationById = async (organizationId: string) =>
 // list of org members for the members modal (must be at least MEMBER)
 export const getOrganizationMembers = async (organizationId: string) =>
   toActionResult(async () => {
-    await requireOrgMember(organizationId);
+    const membership = await requireOrgMember(organizationId);
 
     const memberships = await db.membership.findMany({
       where: { organizationId },
@@ -64,10 +64,12 @@ export const getOrganizationMembers = async (organizationId: string) =>
     const members = memberships.map((m) => ({
       userId: m.userId,
       role: m.role,
-      user: { name: m.user.name, email: m.user.email },
+      user: { name: m.user.name, email: m.user.email, image: m.user.image },
     }));
 
-    return { members };
+    // The caller's own id lets the UI tell "you" apart from teammates, and the caller's role
+    // (already in the list) decides whether it offers admin controls.
+    return { members, currentUserId: membership.userId };
   });
 
 // create an ADDITIONAL organization (in addition to the default one, which already exists after registration)

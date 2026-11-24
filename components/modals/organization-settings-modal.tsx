@@ -2,10 +2,19 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ConfirmModal } from "@/components/modals/confirm-modal";
+import { AuthMessage } from "@/components/auth/auth-form";
+import {
+  DangerZoneHeading,
+  ModalHeading,
+  modalCloseClass,
+  modalContentClass,
+  modalFieldClass,
+  softDangerClass,
+} from "@/components/modals/modal-parts";
 
 import {
   getOrganizationById,
@@ -101,67 +110,81 @@ export const OrganizationSettingsModal = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Team settings</DialogTitle>
-        </DialogHeader>
+      <DialogContent className={modalContentClass} closeClassName={modalCloseClass}>
+        <ModalHeading title="Team settings" description="Manage your workspace name and access." />
 
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-[15px] text-muted-foreground">Loading...</p>
         ) : (
           <div className="space-y-6">
-            <div className="space-y-2">
+            <div className="space-y-4">
               <Input
+                aria-label="Team name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={isPending || !isAdmin}
+                className={modalFieldClass}
               />
-              {error && <p className="text-sm text-red-600">{error}</p>}
-              {isAdmin && (
+              {error && <AuthMessage type="error">{error}</AuthMessage>}
+              {isAdmin ? (
                 <Button
                   onClick={onSave}
                   disabled={isPending || !name}
-                  size="sm"
-                  className={cn(!(isPending || !name) && "cursor-pointer")}
+                  className="h-11 cursor-pointer rounded-xl px-5 text-[15px] font-semibold"
                 >
                   Save name
                 </Button>
-              )}
-              {!isAdmin && (
-                <p className="text-xs text-muted-foreground">
+              ) : (
+                <p className="text-sm text-muted-foreground">
                   Only the team administrator can change the name
                 </p>
               )}
             </div>
 
-            <div className="border-t pt-4 space-y-2">
-              <p className="text-sm font-medium text-red-600">Danger zone</p>
-              <ConfirmModal
-                header="Leave the team?"
-                description="You will lose access to this team's boards."
-                disabled={isPending}
-                onConfirm={onLeave}
-              >
-                <Button variant="outline" disabled={isPending} className="w-full cursor-pointer">
-                  Leave the team
-                </Button>
-              </ConfirmModal>
-              {isAdmin && (
+            <div className="space-y-4 border-t pt-6">
+              <div className="space-y-1.5">
+                <DangerZoneHeading>Danger zone</DangerZoneHeading>
+                <p className="text-[15px] text-muted-foreground">
+                  Irreversible actions for this organization.
+                </p>
+              </div>
+
+              <div className="space-y-3">
                 <ConfirmModal
-                  header="Delete team permanently?"
-                  description="All team boards will be lost forever."
+                  header="Leave the team?"
+                  description="You will lose access to this team's boards."
                   disabled={isPending}
-                  onConfirm={onDelete}
+                  onConfirm={onLeave}
                 >
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     disabled={isPending}
-                    className="w-full cursor-pointer"
+                    className="h-12 w-full cursor-pointer rounded-xl bg-background text-[15px] font-medium"
                   >
-                    Delete team permanently
+                    Leave the team
                   </Button>
                 </ConfirmModal>
-              )}
+
+                {isAdmin && (
+                  <ConfirmModal
+                    header="Delete team permanently?"
+                    description="All team boards will be lost forever."
+                    disabled={isPending}
+                    onConfirm={onDelete}
+                  >
+                    <Button
+                      variant="ghost"
+                      disabled={isPending}
+                      className={cn(
+                        softDangerClass,
+                        "h-12 w-full text-[15px] hover:text-foreground",
+                      )}
+                    >
+                      Delete team permanently
+                    </Button>
+                  </ConfirmModal>
+                )}
+              </div>
             </div>
           </div>
         )}
