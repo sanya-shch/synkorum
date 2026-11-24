@@ -1,5 +1,6 @@
 "use client";
 
+import { afterLayersMoved } from "@/lib/canvas/connectors-live";
 import { memo } from "react";
 import {
   BringToFront,
@@ -120,6 +121,9 @@ export const SelectionTools = memo(({ camera, setLastUsedColor }: SelectionTools
       for (const [id, delta] of Object.entries(patch)) {
         liveLayers.get(id)?.update(delta);
       }
+
+      // Lines attached to aligned shapes follow them.
+      afterLayersMoved(liveLayers, Object.keys(patch));
     },
     [selection],
   );

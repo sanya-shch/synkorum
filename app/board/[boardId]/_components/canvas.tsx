@@ -24,15 +24,26 @@ import {
 import { isTypingTarget } from "@/lib/canvas/input";
 import { nudge, type LayerBounds } from "@/lib/canvas/alignment";
 import { resizeGroup } from "@/lib/canvas/resize-group";
-import { moveLineEndpoint } from "@/lib/canvas/line";
+import { getLineEndpoints, getLineLength, moveLineEndpoint } from "@/lib/canvas/line";
+import {
+  arrowPatch,
+  constrainAngle,
+  DEFAULT_LINE_LENGTH,
+  findSnapTarget,
+  MIN_LINE_LENGTH,
+  SNAP_RADIUS_PX,
+} from "@/lib/canvas/connectors";
+import { afterLayersMoved, insertLine } from "@/lib/canvas/connectors-live";
 import { MAX_LAYERS } from "@/lib/constants";
 import { notifyLayerLimit } from "@/lib/layer-limit";
 import {
   Camera,
   CanvasMode,
   CanvasState,
+  Anchor,
   Color,
   LayerType,
+  LineLayer,
   Point,
   Side,
   XYWH,
@@ -121,11 +132,12 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
               type: layerType,
               x: position.x,
               y: position.y,
-              height: 100,
-              width: 100,
+              height: 0,
+              width: DEFAULT_LINE_LENGTH,
               flipX: false,
               flipY: false,
               fill: lastUsedColor,
+              arrow: false,
             }
           : {
               type: layerType,
@@ -169,6 +181,9 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
           });
         }
       }
+
+      // Lines attached to what moved follow it; a line moved without its shapes comes loose.
+      afterLayersMoved(liveLayers, self.presence.selection);
 
       setCanvasState({ mode: CanvasMode.Translating, current: point });
     },
@@ -290,6 +305,8 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
       for (const [id, bounds] of Object.entries(patch)) {
         liveLayers.get(id)?.update(bounds);
       }
+
+      afterLayersMoved(liveLayers, Object.keys(patch));
     },
     [canvasState],
   );
@@ -334,22 +351,137 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
   );
 
   const resizeLineEndpoint = useMutation(
-    ({ storage, self }, point: Point) => {
+    ({ storage, self }, point: Point, modifiers: { shift: boolean; alt: boolean }) => {
       if (canvasState.mode !== CanvasMode.ResizingLine || !self.canWrite) return;
 
-      const layer = storage.get("layers").get(canvasState.layerId);
+      const liveLayers = storage.get("layers");
+      const layer = liveLayers.get(canvasState.layerId);
       if (!layer) return;
 
       // .get() on a LiveObject<Layer> only exposes fields common to every layer type
       // (keyof of a union is the intersection of its members' keys), so read the
-      // Line-only flipX/flipY via a plain, type-guard-narrowable snapshot instead.
+      // Line-only fields via a plain, type-guard-narrowable snapshot instead.
       const data = layer.toJSON();
       if (data.type !== LayerType.Line) return;
 
-      const next = moveLineEndpoint(data, canvasState.which, point);
-      layer.update(next);
+      const { which } = canvasState;
+      const bindingKey = which === "start" ? "startBinding" : "endBinding";
+      const otherBinding = which === "start" ? data.endBinding : data.startBinding;
+
+      // Snap to a shape's magnet unless Alt is held. A line is never attached to the same
+      // shape at both ends.
+      const target = modifiers.alt
+        ? null
+        : findSnapTarget(point, storage.get("layerIds").toJSON(), liveLayersToMap(liveLayers), {
+            radius: SNAP_RADIUS_PX / camera.zoom,
+            excludeIds: [canvasState.layerId, ...(otherBinding ? [otherBinding.layerId] : [])],
+          });
+
+      // Without a magnet, Shift locks the direction to multiples of 45 degrees.
+      const { start, end } = getLineEndpoints(data);
+      const fixed = which === "start" ? end : start;
+      const position = target
+        ? target.point
+        : modifiers.shift
+          ? constrainAngle(fixed, point)
+          : point;
+
+      const binding = target ? { layerId: target.layerId, anchor: target.anchor } : null;
+      const patch: Partial<LineLayer> = {
+        ...moveLineEndpoint(data, which, position),
+        [bindingKey]: binding,
+        ...arrowPatch(data, { ...data, [bindingKey]: binding }),
+      };
+
+      layer.update(patch);
     },
-    [canvasState],
+    [canvasState, camera.zoom],
+  );
+
+  // Starts a new line at `origin` and hands the drag over to resizeLineEndpoint, so the
+  // new line's end follows the pointer (and snaps) exactly like an existing line's handle.
+  const startNewLine = useMutation(
+    (
+      { storage, self, setMyPresence },
+      layerId: string,
+      origin: Point,
+      startBinding: { layerId: string; anchor: Anchor } | null,
+    ) => {
+      if (!self.canWrite) return false;
+
+      const liveLayers = storage.get("layers");
+      if (liveLayers.size >= MAX_LAYERS) {
+        notifyLayerLimit();
+        return false;
+      }
+
+      insertLine(liveLayers, storage.get("layerIds"), layerId, origin, lastUsedColor, startBinding);
+      setMyPresence({ selection: [layerId] }, { addToHistory: true });
+      return true;
+    },
+    [lastUsedColor],
+  );
+
+  // Pressing one of the dots next to a selected shape drags a new line out of that side.
+  const onConnectorPointerDown = useCallback(
+    (shapeId: string, anchor: Anchor, origin: Point) => {
+      // Paused first, so creating the line and dragging it out is a single undo step.
+      history.pause();
+      const layerId = nanoid();
+
+      if (!startNewLine(layerId, origin, { layerId: shapeId, anchor })) {
+        history.resume();
+        return;
+      }
+
+      setCanvasState({ mode: CanvasMode.ResizingLine, layerId, which: "end", created: "magnet" });
+    },
+    [history, startNewLine],
+  );
+
+  // With the line tool: press where the line should start (snapping to a nearby magnet),
+  // drag, release where it should end.
+  const findLineStart = useMutation(
+    ({ storage }, point: Point) => {
+      const liveLayers = storage.get("layers");
+      const target = findSnapTarget(
+        point,
+        storage.get("layerIds").toJSON(),
+        liveLayersToMap(liveLayers),
+        { radius: SNAP_RADIUS_PX / camera.zoom },
+      );
+
+      return {
+        origin: target ? target.point : point,
+        binding: target ? { layerId: target.layerId, anchor: target.anchor } : null,
+      };
+    },
+    [camera.zoom],
+  );
+
+  // A line that was just dragged out and is (almost) zero length was a click: with the line
+  // tool that means "give me a default line", from a magnet it means "never mind".
+  const finishNewLine = useMutation(
+    ({ storage, setMyPresence }, layerId: string, created: "magnet" | "tool") => {
+      const liveLayers = storage.get("layers");
+      const layer = liveLayers.get(layerId);
+      if (!layer) return;
+
+      const data = layer.toJSON();
+      if (data.type !== LayerType.Line || getLineLength(data) >= MIN_LINE_LENGTH) return;
+
+      if (created === "tool" && !data.startBinding) {
+        layer.update({ width: DEFAULT_LINE_LENGTH, height: 0, flipX: false, flipY: false });
+        return;
+      }
+
+      liveLayers.delete(layerId);
+      const liveLayerIds = storage.get("layerIds");
+      const index = liveLayerIds.indexOf(layerId);
+      if (index !== -1) liveLayerIds.delete(index);
+      setMyPresence({ selection: [] }, { addToHistory: true });
+    },
+    [],
   );
 
   const onWheel = useCallback((e: React.WheelEvent) => {
@@ -401,7 +533,7 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
         // (a square stays a square, a circle stays a circle instead of becoming an oval).
         resizeSelectedLayer(current, e.shiftKey);
       } else if (canvasState.mode === CanvasMode.ResizingLine) {
-        resizeLineEndpoint(current);
+        resizeLineEndpoint(current, { shift: e.shiftKey, alt: e.altKey });
       } else if (canvasState.mode === CanvasMode.Pencil) {
         continueDrawing(current, e);
       }
@@ -429,6 +561,24 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
       const point = pointerEventToCanvasPoint(e, camera);
 
       if (canvasState.mode === CanvasMode.Inserting) {
+        // The line tool draws by dragging (press = start, release = end); every other
+        // shape is placed on release (see onPointerUp).
+        if (canvasState.layerType === LayerType.Line) {
+          const { origin, binding } = findLineStart(point);
+          history.pause();
+          const layerId = nanoid();
+
+          if (startNewLine(layerId, origin, binding)) {
+            setCanvasState({
+              mode: CanvasMode.ResizingLine,
+              layerId,
+              which: "end",
+              created: "tool",
+            });
+          } else {
+            history.resume();
+          }
+        }
         return;
       }
 
@@ -439,7 +589,7 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
 
       setCanvasState({ origin: point, mode: CanvasMode.Pressing });
     },
-    [camera, canvasState.mode, setCanvasState, startDrawing],
+    [camera, canvasState, setCanvasState, startDrawing, findLineStart, startNewLine, history],
   );
 
   const onPointerUp = useMutation(
@@ -455,6 +605,9 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
         insertPath();
       } else if (canvasState.mode === CanvasMode.Inserting) {
         insertLayer(canvasState.layerType, point);
+      } else if (canvasState.mode === CanvasMode.ResizingLine && canvasState.created) {
+        finishNewLine(canvasState.layerId, canvasState.created);
+        setCanvasState({ mode: CanvasMode.None });
       } else {
         setCanvasState({
           mode: CanvasMode.None,
@@ -463,7 +616,16 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
 
       history.resume();
     },
-    [camera, canvasState, history, insertLayer, unselectLayers, insertPath, setCanvasState],
+    [
+      camera,
+      canvasState,
+      history,
+      insertLayer,
+      unselectLayers,
+      insertPath,
+      finishNewLine,
+      setCanvasState,
+    ],
   );
 
   const selections = useOthersMapped((other) => other.presence.selection);
@@ -529,6 +691,8 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
     for (const [id, delta] of Object.entries(patch)) {
       liveLayers.get(id)?.update(delta);
     }
+
+    afterLayersMoved(liveLayers, Object.keys(patch));
   }, []);
 
   useEffect(() => {
@@ -723,6 +887,7 @@ export const Canvas = ({ board, isMember }: CanvasProps) => {
           <SelectionBox
             onResizeHandlePointerDown={onResizeHandlePointerDown}
             onLineEndpointPointerDown={onLineEndpointPointerDown}
+            onConnectorPointerDown={onConnectorPointerDown}
             readOnly={readOnly}
             zoom={camera.zoom}
           />

@@ -1,5 +1,6 @@
 import { colorToCss } from "@/lib/canvas/color";
-import { getArrowheadPoints } from "@/lib/canvas/line";
+import { lineHasArrow } from "@/lib/canvas/connectors";
+import { getArrowheadPoints, getStrokeEnd } from "@/lib/canvas/line";
 import { LineLayer } from "@/types/canvas";
 
 interface LineProps {
@@ -19,6 +20,11 @@ export const Line = ({ id, layer, onPointerDown, selectionColor }: LineProps) =>
   const start = { x: flipX ? width : 0, y: flipY ? height : 0 };
   const end = { x: flipX ? 0 : width, y: flipY ? 0 : height };
   const color = fill ? colorToCss(fill) : "#000";
+
+  // Only a line attached to a shape (or an older line saved with one) ends in an arrowhead.
+  // The stroke stops short of the arrowhead so it can't poke out through its tip.
+  const hasArrow = lineHasArrow(layer) && (width > 0 || height > 0);
+  const strokeEnd = hasArrow ? getStrokeEnd(start, end, ARROWHEAD_SIZE) : end;
 
   return (
     <g
@@ -44,13 +50,13 @@ export const Line = ({ id, layer, onPointerDown, selectionColor }: LineProps) =>
       <line
         x1={start.x}
         y1={start.y}
-        x2={end.x}
-        y2={end.y}
+        x2={strokeEnd.x}
+        y2={strokeEnd.y}
         stroke={color}
         strokeWidth={2}
         strokeLinecap="round"
       />
-      <polygon points={getArrowheadPoints(start, end, ARROWHEAD_SIZE)} fill={color} />
+      {hasArrow && <polygon points={getArrowheadPoints(start, end, ARROWHEAD_SIZE)} fill={color} />}
     </g>
   );
 };

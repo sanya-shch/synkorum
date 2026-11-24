@@ -2,14 +2,17 @@
 
 import { memo } from "react";
 
-import { LayerType, Side, XYWH } from "@/types/canvas";
+import { Anchor, LayerType, Point, Side, XYWH } from "@/types/canvas";
 import { useSelf, useStorage, shallow } from "@liveblocks/react";
 import { useSelectionBounds } from "@/hooks/use-selection-bounds";
 import { getLineEndpoints } from "@/lib/canvas/line";
+import { ANCHORS, getAnchorPoint, isConnectable } from "@/lib/canvas/connectors";
 
 interface SelectionBoxProps {
   onResizeHandlePointerDown: (corner: Side, initialBounds: XYWH) => void;
   onLineEndpointPointerDown: (layerId: string, which: "start" | "end") => void;
+  // Pressing a connector dot next to the selected shape: `origin` is the magnet on the shape.
+  onConnectorPointerDown: (shapeId: string, anchor: Anchor, origin: Point) => void;
   readOnly?: boolean;
   zoom: number;
 }
@@ -17,8 +20,24 @@ interface SelectionBoxProps {
 // Visual (screen-space) target size for a resize handle, regardless of zoom level.
 const HANDLE_SCREEN_SIZE = 8;
 
+// The connector dots sit this far (screen pixels) outside the middle of each side, clear of
+// the resize handles that sit on the outline itself.
+const CONNECTOR_OFFSET_SCREEN = 18;
+const CONNECTOR_DIRECTION: Record<Anchor, Point> = {
+  top: { x: 0, y: -1 },
+  bottom: { x: 0, y: 1 },
+  left: { x: -1, y: 0 },
+  right: { x: 1, y: 0 },
+};
+
 export const SelectionBox = memo(
-  ({ onResizeHandlePointerDown, onLineEndpointPointerDown, readOnly, zoom }: SelectionBoxProps) => {
+  ({
+    onResizeHandlePointerDown,
+    onLineEndpointPointerDown,
+    onConnectorPointerDown,
+    readOnly,
+    zoom,
+  }: SelectionBoxProps) => {
     const soleLayerId = useSelf((me) =>
       me.presence.selection.length === 1 ? me.presence.selection[0] : null,
     );
@@ -30,6 +49,12 @@ export const SelectionBox = memo(
     const isShowingHandles = useStorage(
       (root) => !readOnly && soleLayerId && root.layers[soleLayerId]?.type !== LayerType.Path,
     );
+
+    // A single selected shape a line can be attached to shows connector dots on its sides.
+    const isConnectableShape = useStorage((root) => {
+      const layer = soleLayerId ? root.layers[soleLayerId] : null;
+      return !readOnly && !!layer && isConnectable(layer);
+    });
 
     // A Line gets its own 2 endpoint handles instead of the generic 8-handle box:
     // dragging a corner/edge handle on a 2-point line would move both endpoints at
@@ -54,12 +79,17 @@ export const SelectionBox = memo(
       return (
         <>
           {[
-            { point: start, which: "start" as const },
-            { point: end, which: "end" as const },
-          ].map(({ point, which }) => (
+            { point: start, which: "start" as const, bound: !!soleLine.startBinding },
+            { point: end, which: "end" as const, bound: !!soleLine.endBinding },
+          ].map(({ point, which, bound }) => (
             <circle
               key={which}
-              className="fill-white stroke-1 stroke-blue-500"
+              // Filled blue = this end is attached to a shape, white = free.
+              className={
+                bound
+                  ? "fill-blue-500 stroke-1 stroke-white"
+                  : "fill-white stroke-1 stroke-blue-500"
+              }
               vectorEffect="non-scaling-stroke"
               cx={point.x}
               cy={point.y}
@@ -88,6 +118,36 @@ export const SelectionBox = memo(
           width={bounds.width}
           height={bounds.height}
         />
+        {isConnectableShape &&
+          ANCHORS.map((anchor) => {
+            const edge = getAnchorPoint(bounds, anchor);
+            const direction = CONNECTOR_DIRECTION[anchor];
+            const cx = edge.x + (direction.x * CONNECTOR_OFFSET_SCREEN) / zoom;
+            const cy = edge.y + (direction.y * CONNECTOR_OFFSET_SCREEN) / zoom;
+
+            return (
+              <g
+                key={anchor}
+                data-testid={`connector-${anchor}`}
+                style={{ cursor: "crosshair" }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  onConnectorPointerDown(soleLayerId!, anchor, edge);
+                }}
+              >
+                {/* Generous invisible hit area around the small dot. */}
+                <circle cx={cx} cy={cy} r={12 / zoom} fill="transparent" />
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={5 / zoom}
+                  className="fill-blue-500 stroke-white"
+                  strokeWidth={1.5}
+                  vectorEffect="non-scaling-stroke"
+                />
+              </g>
+            );
+          })}
         {isShowingHandles && (
           <>
             <rect

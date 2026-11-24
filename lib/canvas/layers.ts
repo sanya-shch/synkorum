@@ -1,6 +1,8 @@
 import type { LiveMap, LiveObject } from "@liveblocks/client";
 import type { Color, Layer, PathLayer, Point, XYWH } from "@/types/canvas";
 import { LayerType, Side } from "@/types/canvas";
+import { segmentIntersectsRect } from "@/lib/canvas/connectors";
+import { getLineEndpoints } from "@/lib/canvas/line";
 
 export function resizeBounds(bounds: XYWH, corner: Side, point: Point, lockAspect = false): XYWH {
   const result = {
@@ -80,6 +82,14 @@ export function findIntersectingLayersWithRectangle(
     const layer = layers.get(layerId);
 
     if (layer == null) {
+      continue;
+    }
+
+    // A diagonal line is only "in" the net where the line itself passes through it, not
+    // wherever its (much larger) bounding box happens to overlap.
+    if (layer.type === LayerType.Line) {
+      const { start, end } = getLineEndpoints(layer);
+      if (segmentIntersectsRect(start, end, rect)) ids.push(layerId);
       continue;
     }
 

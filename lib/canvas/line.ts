@@ -23,25 +23,40 @@ export function getLineEndpoints(line: LineBox): { start: Point; end: Point } {
   return { start, end };
 }
 
+// Builds the normalized box + flip flags for a line that runs from `start` to `end`.
+export function lineFromEndpoints(start: Point, end: Point): LineBox {
+  return {
+    x: Math.min(start.x, end.x),
+    y: Math.min(start.y, end.y),
+    width: Math.abs(end.x - start.x),
+    height: Math.abs(end.y - start.y),
+    flipX: start.x > end.x,
+    flipY: start.y > end.y,
+  };
+}
+
 // Moves one endpoint of the line to `point`, keeping the other endpoint fixed, and
 // returns the new normalized box + flip flags. Used by the line's own 2-handle drag
 // (not the generic 8-handle box resize, which would move both endpoints at once for
 // a diagonal line - see the ResizingLine comment in types/canvas.ts).
 export function moveLineEndpoint(line: LineBox, which: "start" | "end", point: Point): LineBox {
   const { start, end } = getLineEndpoints(line);
-  const fixed = which === "start" ? end : start;
-  const moved = point;
-  const newStart = which === "start" ? moved : fixed;
-  const newEnd = which === "start" ? fixed : moved;
 
-  return {
-    x: Math.min(newStart.x, newEnd.x),
-    y: Math.min(newStart.y, newEnd.y),
-    width: Math.abs(newEnd.x - newStart.x),
-    height: Math.abs(newEnd.y - newStart.y),
-    flipX: newStart.x > newEnd.x,
-    flipY: newStart.y > newEnd.y,
-  };
+  return which === "start" ? lineFromEndpoints(point, end) : lineFromEndpoints(start, point);
+}
+
+export const getLineLength = (line: LineBox) => Math.hypot(line.width, line.height);
+
+// Where the visible stroke should stop so it doesn't poke through the tip of an arrowhead
+// of the given size: a little inside the end point, along the line. Lines shorter than
+// that keep their full length.
+export function getStrokeEnd(from: Point, to: Point, arrowSize: number): Point {
+  const length = Math.hypot(to.x - from.x, to.y - from.y);
+  const inset = arrowSize * 0.8;
+  if (length <= inset) return to;
+
+  const ratio = (length - inset) / length;
+  return { x: from.x + (to.x - from.x) * ratio, y: from.y + (to.y - from.y) * ratio };
 }
 
 // Three SVG points ("x,y x,y x,y") for a filled triangle arrowhead at `to`, pointing

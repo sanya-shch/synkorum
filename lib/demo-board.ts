@@ -1,5 +1,5 @@
 import type { PlainLsonObject } from "@liveblocks/client";
-import { Color, Layer, LayerType } from "@/types/canvas";
+import { Color, Layer, LayerType, LineBinding } from "@/types/canvas";
 
 type PlainLson = PlainLsonObject["data"][string];
 
@@ -33,7 +33,16 @@ const shape = (
   value: string,
 ): Layer => ({ type, x, y, width, height, fill, value });
 
-const arrow = (x: number, y: number, width: number): Layer => ({
+// A connector between the right/left magnets of two shapes of the board below. Its
+// geometry has to match the shapes' magnets exactly (a test checks this), because the
+// editor only re-aims a connector when one of its shapes moves.
+const connector = (
+  x: number,
+  y: number,
+  width: number,
+  from: LineBinding,
+  to: LineBinding,
+): Layer => ({
   type: LayerType.Line,
   x,
   y,
@@ -42,6 +51,9 @@ const arrow = (x: number, y: number, width: number): Layer => ({
   flipX: false,
   flipY: false,
   fill: BLACK,
+  startBinding: from,
+  endBinding: to,
+  arrow: true,
 });
 
 // Listed back to front: later entries are drawn on top of earlier ones.
@@ -56,7 +68,12 @@ const DEMO_LAYERS: Layer[] = [
     value: "Welcome to Synkorum",
   },
   note(60, 130, YELLOW, "Drag me around. Double-click a note to edit its text."),
-  note(300, 130, PINK, "Use the toolbar at the bottom: shapes, notes, pencil, arrows."),
+  note(
+    300,
+    130,
+    PINK,
+    "Select a shape and drag one of the blue dots next to it onto another shape to connect them.",
+  ),
   note(
     540,
     130,
@@ -70,9 +87,21 @@ const DEMO_LAYERS: Layer[] = [
     "This is a demo session: 3 boards, 100 shapes per board, and it expires after 24 hours.",
   ),
   shape(LayerType.Rectangle, 60, 410, 190, 90, BLUE, "Idea"),
-  arrow(250, 455, 80),
+  connector(
+    250,
+    455,
+    80,
+    { layerId: "demo-6", anchor: "right" },
+    { layerId: "demo-8", anchor: "left" },
+  ),
   shape(LayerType.Diamond, 330, 385, 200, 140, YELLOW, "Works?"),
-  arrow(530, 455, 90),
+  connector(
+    530,
+    455,
+    90,
+    { layerId: "demo-8", anchor: "right" },
+    { layerId: "demo-10", anchor: "left" },
+  ),
   shape(LayerType.Ellipse, 620, 410, 190, 90, GREEN, "Ship it"),
 ];
 

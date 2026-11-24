@@ -1,4 +1,5 @@
 import { useSelf, useMutation } from "@liveblocks/react";
+import { healBoundLines } from "@/lib/canvas/connectors-live";
 
 export const useDeleteLayers = () => {
   const selection = useSelf((me) => me.presence.selection);
@@ -17,6 +18,9 @@ export const useDeleteLayers = () => {
           liveLayerIds.delete(index);
         }
       }
+
+      // Lines that were attached to a deleted shape stay where they are, now free.
+      healBoundLines(liveLayers);
 
       setMyPresence({ selection: [] }, { addToHistory: true });
     },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { Link2, Pencil, Share2, Eye, Trash2 } from "lucide-react";
@@ -29,10 +29,13 @@ interface ActionsProps {
 
 export const Actions = ({ children, side, sideOffset, id, title }: ActionsProps) => {
   const router = useRouter();
+  const pathname = usePathname();
   const { onOpen } = useRenameModal();
   const [deletePending, startTransition] = useTransition();
   const { pending: linkPending, onCopyLink, onCopyShareLink } = useBoardLinks(id);
   const pending = deletePending || linkPending;
+
+  const isOnDashboard = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
 
   const onDelete = () => {
     startTransition(async () => {
@@ -60,28 +63,32 @@ export const Actions = ({ children, side, sideOffset, id, title }: ActionsProps)
         side={side}
         sideOffset={sideOffset}
       >
-        <DropdownMenuItem onClick={onCopyLink} className="p-3 cursor-pointer">
-          <Link2 className="h-4 w-4 mr-2" />
-          Copy board link
-        </DropdownMenuItem>
+        {isOnDashboard && (
+          <>
+            <DropdownMenuItem onClick={onCopyLink} className="p-3 cursor-pointer">
+              <Link2 className="h-4 w-4 mr-2" />
+              Copy board link
+            </DropdownMenuItem>
 
-        <DropdownMenuItem
-          onClick={() => onCopyShareLink(true)}
-          disabled={pending}
-          className="p-3 cursor-pointer"
-        >
-          <Share2 className="h-4 w-4 mr-2" />
-          Copy anonymous share link
-        </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onCopyShareLink(true)}
+              disabled={pending}
+              className="p-3 cursor-pointer"
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Copy anonymous share link
+            </DropdownMenuItem>
 
-        <DropdownMenuItem
-          onClick={() => onCopyShareLink(false)}
-          disabled={pending}
-          className="p-3 cursor-pointer"
-        >
-          <Eye className="h-4 w-4 mr-2" />
-          Copy read-only share link
-        </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onCopyShareLink(false)}
+              disabled={pending}
+              className="p-3 cursor-pointer"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Copy read-only share link
+            </DropdownMenuItem>
+          </>
+        )}
 
         <DropdownMenuItem onClick={() => onOpen(id, title)} className="p-3 cursor-pointer">
           <Pencil className="h-4 w-4 mr-2" />

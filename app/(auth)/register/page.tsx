@@ -98,9 +98,9 @@ export default function RegisterPage() {
           />
           <input type="hidden" {...form.register("inviteToken")} value={inviteToken} />
 
-        {message && <AuthMessage type={message.type}>{message.text}</AuthMessage>}
+          {message && <AuthMessage type={message.type}>{message.text}</AuthMessage>}
 
-        <AuthSubmit pending={isPending}>
+          <AuthSubmit pending={isPending}>
             {inviteToken ? "Join the team" : "Create account"}
           </AuthSubmit>
         </form>

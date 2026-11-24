@@ -52,6 +52,11 @@ export type DiamondLayer = BoxLayer<LayerType.Diamond>;
 // all work on a Line with no special-casing. flipX/flipY separately record which
 // corner of that box is the line's start vs. end, so the line can point in any of
 // the 4 diagonal directions (not just top-left-to-bottom-right).
+//
+// A line end can be "magnetized" to a shape (see lib/canvas/connectors.ts): the binding
+// names the shape and the side whose midpoint the end is pinned to, and the end then
+// follows that shape when it moves or is resized. These fields are optional so boards
+// saved before connectors existed keep loading unchanged; `null` means "explicitly free".
 export type LineLayer = {
   type: LayerType.Line;
   x: number;
@@ -61,6 +66,20 @@ export type LineLayer = {
   flipX: boolean;
   flipY: boolean;
   fill: Color;
+  startBinding?: LineBinding | null;
+  endBinding?: LineBinding | null;
+  // Whether the arrowhead at the end is drawn. Missing on lines saved before this field
+  // existed: those always had an arrowhead (see lineHasArrow in lib/canvas/connectors.ts).
+  arrow?: boolean;
+};
+
+// The four magnets of a shape: the midpoints of its sides. For every connectable shape
+// (rectangle, ellipse, diamond, note, text) these lie exactly on its outline.
+export type Anchor = "top" | "right" | "bottom" | "left";
+
+export type LineBinding = {
+  layerId: string;
+  anchor: Anchor;
 };
 
 export type Point = {
@@ -126,6 +145,10 @@ export type CanvasState =
       mode: CanvasMode.ResizingLine;
       layerId: string;
       which: "start" | "end";
+      // Set while a line that was just created is still being dragged out: from a shape's
+      // magnet, or with the line tool. Such a line that ends up (almost) zero length is
+      // cleaned up on release instead of being left behind as an invisible layer.
+      created?: "magnet" | "tool";
     };
 
 export enum CanvasMode {
